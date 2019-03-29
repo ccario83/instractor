@@ -57,19 +57,20 @@ The script requires at minimum two read files, specified with `--read1` and `--r
 <br/>
 
 Screen output:
-
->Total processed:                 1001  
+```bash
+Total processed:                 1001  
 Total errors:                    146  
 successfully parsed:             85.4%  
->  
->Poor read alignment errors:      145  
->Unexpected insert length errors: 0  
->  
->Wrote "example/example1_output.fasta"  
+    
+Poor read alignment errors:      145  
+Unexpected insert length errors: 0  
+  
+Wrote "example/example1_output.fasta"  
+```
 
 <br/>
 <br/>
-You'll also see the output reads in **fasta** format: 
+You'll also see the output reads in fasta format: 
 
 *examples/example1_output.fasta:*
 
