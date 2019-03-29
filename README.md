@@ -47,6 +47,8 @@ Check out the script parameters with:
 ./instractor.jl --help
 ```
 
+<br/>  
+
 ### Example 1: Simply merge reads based on best overlap 
 
 The script requires at minimum two read files, specified with `--read1` and `--read2` respectively. Read files can be either ***.fasta** or ***.fasta.gz** files. You should also specify an output file for the default mode (more later on modes):
@@ -70,7 +72,7 @@ Wrote "example/example1_output.fasta"
 
 <br/>
 <br/>
-You'll also see the output reads in fasta format: 
+You'll also see the output reads in fasta format (read1's header with the insert alignment score is appended to the header line): 
 
 *examples/example1_output.fasta:*
 
