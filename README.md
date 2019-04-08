@@ -1,5 +1,8 @@
 ## instractor
 
+Instractor is a simple tool written in Julia to extract desired target DNA sequence (including targets flanked by variable length up/down-stream sequence) from Paired End (PE) Illumina reads. It's able to take overlapping sequence quality scores into consideration and doesn't care about target length. It also offers a few different ways to write output, including a human friendly visualization format.
+
+This tool is similar to more sophisticated and better validated tools like [PEAR](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3933873/), iTag, BIPES, Shera, FLASH, PANDAseq and COPE, so you should check out these projects if instractor doesn't do what you'd like. Alternatively, feel free to add a "enhancement" feature request as an issue, and I'd be happy to take it into consideration. 
 
 ## Problem
 
@@ -62,7 +65,7 @@ Screen output:
 ```bash
 Total processed:                 1001  
 Total errors:                    146  
-successfully parsed:             85.4%  
+Successfully parsed:             85.4%  
     
 Poor read alignment errors:      145  
 Unexpected insert length errors: 0  
@@ -106,7 +109,7 @@ Screen output:
 ```bash
 Total processed:                 1001  
 Total errors:                    234  
-successfully parsed:             76.6%  
+Successfully parsed:             76.6%  
  
 Poor read alignment errors:      145  
 Unexpected insert length errors: 88  
@@ -168,12 +171,12 @@ CGCCGCAATTCCGTTAGAGGTACCTTTCGATTCTCACTCTACGTCTTCGTTGTTTATGACACCTGGAGGTTCGTC
 
                                         ▆▆▆▆▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▅
 Extracted insert:                       ACGTCTTCGTTGTTTATGACA
-length: 21
+Length: 21
 
-offset: 40
-alignment score: 0.879
-leader score:    0.946
-follower score:  0.810
+Offset: 40
+Alignment score: 0.879
+Leader score:    0.946
+Follower score:  0.810
 ====================================================================================================
 
 ```
