@@ -54,10 +54,10 @@ Check out the script parameters with:
 
 ### Example 1: Simply merge reads based on best overlap 
 
-The script requires at minimum two read files, specified with `--read1` and `--read2` respectively. Read files can be either ***.fasta** or ***.fasta.gz** files. You should also specify an output file for the default mode (more later on modes):
+The script requires at minimum two read files, specified with `--read1` and `--read2` respectively. Read files can be either ***.fastq** or ***.fastq.gz** files. You should also specify an output file for the default mode (more later on modes):
 
 ```bash
-./instractor.jl --read1 examples/R1_notrim.fasta --read2 examples/R2_notrim.fasta -o examples/example1_output.fasta
+./instractor.jl --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example1_output.fastq
 ```
 <br/>
 
@@ -70,14 +70,14 @@ Successfully parsed:             85.4%
 Poor read alignment errors:      145  
 Unexpected insert length errors: 0  
   
-Wrote "example/example1_output.fasta"  
+Wrote "example/example1_output.fastq"  
 ```
 
 <br/>
 <br/>
-You'll also see the output reads in fasta format (read1's header with the insert alignment score is appended to the header line): 
+You'll also see the output reads in fastq format (read1's header with the insert alignment score is appended to the header line): 
 
-*examples/example1_output.fasta:*
+*examples/example1_output.fastq:*
 
 ```bash
 @NS500221:298:HCFTVBGXB:1:11101:5483:1102 1:N:0:TAGCGCTC+AGGCTTNG  0.810  
@@ -100,7 +100,7 @@ GAGGCGAAAGACGAATGCCGAAGCGCCATGGAAGCTCTCAAACAAAAGAGTCTTTATAACTGTCGATGTAAAAGGGGTAT
 Specifying expected insert length will filter out reads that don't meet this expectation, specify this number with `-e`
 
 ```bash
-./instractor.jl -e 108 --read1 examples/--read1 examples/R1_notrim.fasta --read2 examples/R2_notrim.fasta -o examples/example2_output.fasta
+./instractor.jl -e 108 --read1 examples/--read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example2_output.fastq
 ```
 <br/>
 <br/>
@@ -114,7 +114,7 @@ Successfully parsed:             76.6%
 Poor read alignment errors:      145  
 Unexpected insert length errors: 88  
   
-Wrote "examples/example2_output.fasta"  
+Wrote "examples/example2_output.fastq"  
 ```
 
 <br/>
@@ -125,7 +125,7 @@ Wrote "examples/example2_output.fasta"
 In addition to writing an output file, you can visualize how the alignment is actually going by changing the mode to 'show' with `-m`:
 
 ```bash
-./instractor.jl -e 108 -m show --read1 examples/R1_notrim.fasta --read2 examples/R2_notrim.fasta -o examples/example3_output.fasta
+./instractor.jl -e 108 -m show --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example3_output.fastq
 ```
 
 Now you'll see entries like this printed to the screen:
@@ -154,7 +154,7 @@ Here we see quality scores represented as vertical bars (the taller the better!)
 Let's say we've used offset primers for sequencing and have a bit of flanking vector sequence to trim before writing the insert. This can be done with the `-L` and `-F` flags for leading and following vector sequence, respectively: 
 
 ```bash
-./instractor.jl -e 21 -m show --read1 examples/R1_trim.fastq.gz --read2 examples/R2_trim.fastq.gz -L CGCAATTCCTTTAGTGGTACCTTTCTATTCTCACTCT -F CTTTCAACAGTTTCGGCCGAACCTCCACC -o examples/example4_output.fasta
+./instractor.jl -e 21 -m show --read1 examples/R1_trim.fastq.gz --read2 examples/R2_trim.fastq.gz -L CGCAATTCCTTTAGTGGTACCTTTCTATTCTCACTCT -F CTTTCAACAGTTTCGGCCGAACCTCCACC -o examples/example4_output.fastq
 ```
 
 Now you\'ll see two additional sequences that correspond to the input leading and following sequences, as well as information about their alignment. The insert sequence is now the sequence between these. A '~' symbol is used to show where these leading/following sequences offset from the read:
@@ -180,6 +180,16 @@ Follower score:  0.810
 ====================================================================================================
 
 ```
+<br/>
+<br/>
+
+### Example 5: Writing output as compressed fastq.gz 
+
+If downstream analysis is able to handle compressed fastq files, it may be desirable to save disk space and write them directly. To do so, simply change the `--format` argument to "fastq.gz": 
+
+```bash
+ ./instractor.jl --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq --format "fastq.gz" -o examples/example5_output.fastq.gz
+```
 
 <br/>
 <br/>
@@ -194,7 +204,7 @@ There are several modes in which to run this script, as specified from the `-m` 
 3) `stream` -- Stream the output instead of writing it to a file
 4) `show` -- Show the parsed alignments and quality scores  
 
-Additionally, instead of writing to **fasta**, read information can be written to a **tsv** file by specifying `-f tsv` when running the script
+Additionally, instead of writing to **fastq**, read information can be written to a **tsv** file by specifying `-f tsv` when running the script
 
 
 **Questions/Concerns**

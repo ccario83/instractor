@@ -328,9 +328,9 @@ function parse_commandline()
             arg_type = String  
             default = "summary"
         "--format", "-f"
-            help = "The output format ('tsv' or 'fasta') of written/streamed results"
+            help = "The output format ('tsv', 'fastq', 'fastq.gz') of written/streamed results"
             arg_type = String
-            default = "fasta"
+            default = "fastq"
         "--read1"
             help = "The read 1 fastq.gz file"
             arg_type = String
@@ -375,8 +375,23 @@ function main()
     parsed_args  = parse_commandline()
     mode         = parsed_args["mode"]
     format       = parsed_args["format"]
-    read1_ifh    = GZip.open(parsed_args["read1"])
-    read2_ifh    = GZip.open(parsed_args["read2"])
+    
+    # Detect and open file type
+    read1_ifh = try 
+        GZip.open(parsed_args["read1"])
+    catch err
+        if isa(err, LoadError)
+            open(parsed_args["read1"])
+        end
+    end
+    read2_ifh = try 
+        GZip.open(parsed_args["read2"])
+    catch err
+        if isa(err, LoadError)
+            open(parsed_args["read2"])
+        end
+    end
+
     leader       = parsed_args["leader"]
     follower_    = reverse_complement(parsed_args["follower"])
     alignment_threshold = parsed_args["align-threshold"]
@@ -389,8 +404,8 @@ function main()
         print("Please choose 'none', 'summary', 'stream' or 'show' for '--mode'")
         exit()
     end
-    if !(format in ["tsv", "fasta"])
-        print("Please choose 'tsv' or 'fasta' for '--format'")
+    if !(format in ["tsv", "fastq", "fastq.gz"])
+        print("Please choose 'tsv', 'fastq', or 'fastq.gz' for '--format'")
         exit()
     end
     # Make sure a file is specified if the mode is 'none' or 'summary'
@@ -401,12 +416,16 @@ function main()
 
     # Open the output file if needed and write a tsv output header if tsv format
     if (mode in ["none", "summary", "show"]) 
-        output_ofh = open(output, "w")
-        if format=="tsv"
-            write(output_ofh, "Insert\tHeader\tRead_Alignment_Score\tAlignment_Qualities")
-            !isempty(leader) ? write(output_ofh, "\tLeader_Alignment_Score") : nothing
-            !isempty(follower_) ? write(output_ofh, "\tFollower_Alignment_Score") : nothing
-            write(output_ofh, "\n")
+        if (format=="fastq.gz")
+            output_ofh = GZip.open(output, "w")
+        else
+            output_ofh = open(output, "w")
+            if format=="tsv"
+                write(output_ofh, "Insert\tHeader\tRead_Alignment_Score\tAlignment_Qualities")
+                !isempty(leader) ? write(output_ofh, "\tLeader_Alignment_Score") : nothing
+                !isempty(follower_) ? write(output_ofh, "\tFollower_Alignment_Score") : nothing
+                write(output_ofh, "\n")
+            end
         end
     end
 
@@ -531,14 +550,14 @@ function main()
             else
                 println(repeat(" ", insert_start), insert)
             end
-            println("length: ",length(insert))
-            println("\noffset: ",insert_start)
-            @printf("alignment score: %1.3f\n", alignment_score)
+            println("Length: ",length(insert))
+            println("\nOffset: ",insert_start)
+            @printf("Alignment score: %1.3f\n", alignment_score)
             if leader != ""
-                @printf("leader score:    %1.3f\n", leader_score)
+                @printf("Leader score:    %1.3f\n", leader_score)
             end
             if follower_ != ""
-                @printf("follower score:  %1.3f\n", follower_score)
+                @printf("Follower score:  %1.3f\n", follower_score)
             end
 
             println(repeat("=",100))
@@ -552,7 +571,7 @@ function main()
             !isempty(follower_) ? line *= @sprintf("\t%1.3f", follower_score) : nothing
             line *= "\n"
         end
-        if format=="fasta"
+        if format=="fastq" || format=="fastq.gz"
             line = @sprintf("%s  %1.3f\n", read1.header, alignment_score)
             line *= insert
             line *= "\n+\n"
@@ -571,7 +590,7 @@ function main()
     if (mode in ["none", "summary", "show"])
         @printf("\rTotal processed:                 %d\n", entry)
         @printf("Total errors:                    %d\n", entry-successful)
-        @printf("successfully parsed:             %3.1f%%\n\n", 100*Float64(successful)/Float64(entry))
+        @printf("Successfully parsed:             %3.1f%%\n\n", 100*Float64(successful)/Float64(entry))
         @printf("Poor read alignment errors:      %d\n", pra_err)
         if leader != ""
             @printf("Poor leader alignment errors:    %d\n", pla_err)
