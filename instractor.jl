@@ -410,7 +410,7 @@ function main()
     end
     # Make sure a file is specified if the mode is 'none' or 'summary'
     if ((mode=="none" || mode=="summary") && isempty(output))
-        print("Please provide a file to write results with '--output' if either 'none' or 'summary' is specified as the mode")
+        print("Please provide a file to write results with '--output' if either 'none', 'summary', or 'show' is specified as the mode")
         exit()
     end
 
@@ -444,7 +444,8 @@ function main()
         # Show a progress indicator if nothing else is requested
         if (mode=="summary" && (entry%1000==0))
             prog = ['⣀','⡄','⠆','⠃','⠉','⠘','⠰','⢠']
-            print("\rProcessing ", prog[Int(entry/1000)%(length(prog))+1])
+            print(stderr, "Processing ", prog[Int(entry/1000)%(length(prog))+1], "\r")
+            flush(stderr)
         end
 
         # Get the next read entry and parse
@@ -588,24 +589,26 @@ function main()
 
     ### Display summary results if requested
     if (mode in ["none", "summary", "show"])
-        @printf("\rTotal processed:                 %d\n", entry)
-        @printf("Total errors:                    %d\n", entry-successful)
-        @printf("Successfully parsed:             %3.1f%%\n\n", 100*Float64(successful)/Float64(entry))
-        @printf("Poor read alignment errors:      %d\n", pra_err)
+        @printf("Total processed:         \t%d\n", entry)
+        @printf("# errors:                \t%d\n", (entry-successful))
+        @printf("# successful:            \t%d\n", successful)
+        @printf("Successfully parsed:     \t%3.1f%%\n", 100*Float64(successful)/Float64(entry))
+
+        println("\nError Distribution:")
+        @printf("Poor read alignment:     \t%d\n", pra_err)
         if leader != ""
-            @printf("Poor leader alignment errors:    %d\n", pla_err)
+            @printf("Poor leader alignment:   \t%d\n", pla_err)
         end
         if follower_ != ""
-            @printf("Poor follower alignment errors:  %d\n", pfa_err)
+            @printf("Poor follower alignment: \t%d\n", pfa_err)
         end
-        @printf("Unexpected insert length errors: %d\n", uil_err)
-        @printf("\nWrote \"%s\"\n", parsed_args["output"])
+        @printf("Unexpected insert length:\t%d\n", uil_err)
+        @printf(stderr, "\rWrote \"%s\"\n", parsed_args["output"])
     end
 
     close(read1_ifh)
     close(read2_ifh)
-    (mode=="none" || mode=="summary") ? close(output_ofh) : nothing
-
+    (mode in  ["none", "summary", "show"]) ? close(output_ofh) : nothing
 end
 
 main()
