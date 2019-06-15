@@ -131,148 +131,139 @@ function phred2sym(phred::String; phred_low::Char='!', phred_high::Char='K', off
 end
 
 
-
-### Align the right sequence relative to the left sequence and return the position and 
-### score of the best sequence match taking the quality scores into account. 
+### Align the query sequence against the anchor sequence and return the position and score of the best alignment
+### NOTE: Passing sequences in reverse order will work, but will be slower
 ### Input:
-###          left - [String] of ACTGs that is the left (top) anchor sequence from which to align
-###         right - [String] of ACTGs that is the right (bottom) sequence to align to the left
-###   left_scores - [String] of ASCII Phred Scores (or similar) that correspond to the left sequence and indicate base quality 
-###  right_scores - [String] of ASCII Phred Scores (or similar) that correspond to the right sequence and indicate base quality 
-###         start - [Int] The position (index) relative to the left string to begin alignment of the right string
-###          stop - [Int] The position (index) relative to the left string to terminate alignment 
-###    use_scores - [Boolean] Whether to weight the alignment scores by base quality or not
-###  allow_offset - [Boolean] Whether to allow the sequences to be offset relative to one another (i.e. right can align past left)
-function quality_align(left::String,  right::String; left_scores=nothing, right_scores=nothing, start=nothing, stop=nothing, use_scores=false, allow_offset=true)
-    # Process and encode input variables
-    ## Start/Stop index defaults
-    if start==nothing
-        start = 1
+###        anchor - [String] of ACTGs that is the anchor sequence to align against
+###         query - [String] of ACTGs that will be aligned to the anchor sequence
+###         start - [Int] The position (1-indexed) relative to the anchor string to begin the alignment (default -query)
+###          stop - [Int] The position (1-indexed) relative to the anchor string to terminate the alignment (default length(anchor)+length(query))
+### Output:
+###    best_start - The nucleotide position, relative to anchor where the best query match occurs (can be negative, zero indexed)
+###    best_score - The number of matching nucleotides at the best_start position (no threshold is applied, can be a horrible score!)
+function align(anchor::String, query::String; start::Int=-length(query), stop::Int=length(anchor))
+    if start < -length(query) || start > length(anchor)
+        error("The alignment start position was misspecified")
     end
-    if stop==nothing
-        if allow_offset
-            stop = length(left)
-        else        
-            stop = length(left) - length(right) + 1
-        end    
+    if stop > length(anchor) || stop < 1
+        error("The alignment stop position was misspecified")
     end
-    # Encoded indices    
-    start = (2*start)-1
-    stop  = (2*stop) -1
     
-    ## Score defaults to a high Phred quality if not known 
-    if left_scores==nothing
-        left_scores = repeat("K",length(left))
-    end
-    if right_scores==nothing
-        right_scores = repeat("K", length(right))
-    end
-    ## Encode scores
-    if use_scores
-        left_scores = encode_scores(left_scores) .* quality_weight
-        right_scores = encode_scores(right_scores) .* quality_weight
-    else
-        left_scores = ones(length(left_scores)*2)
-        right_scores = ones(length(right_scores)*2)
-    end
-
-    # Encode sequences
-    left  =   encode_sequence(left)
-    right  =  encode_sequence(right)
-
-    #scores = []
-    scores = Vector{Float64}(undef, fld(stop-start,2)+1)
-    ## For the desired search range, score the alignments 
-    for i in start:2:stop
-        offsetted   = false
-        left_start  = i
-        left_stop   = i+length(right)-1
-        # For the allow_offset case, aligning past the end of left
-        if allow_offset && (left_stop > length(left))
-            left_stop = length(left)
-            offsetted=true
-        end
-        left_sub = left[left_start:left_stop]
-        
-        right_start = 1
-        right_stop  = length(right)
-        # For the allow_offset case, aligning past the end of left
-        if allow_offset && offsetted
-            right_stop = length(left_sub)
-        end
-        right_sub = right[right_start:right_stop]
-
-        ## bitwise left_sub xor not(right_sub) \xor+[tab] for the ⊻ symbol
-        ## e.g. if left_sub = [ 1 0 0 1 1 ] and right_sub = [ 0 0 1 0 0 ] then this would evaluate to [ 0 1 0 0 0 ]
-        align_sub = left_sub .⊻ .~right_sub
-        left_scores_sub  = left_scores[left_start:left_stop]
-        right_scores_sub = right_scores[right_start:right_stop]
-        # Scores are essentially % of correct bases when quality scores aren't used
-        score = float(sum(align_sub .* left_scores_sub .* right_scores_sub)) / length(align_sub)
-        #push!(scores, score)
-        @inbounds scores[fld(((i-start)+2),2)] = score
-    end
-    # Get the best score
-    best_score, best_start = findmax(scores)
-    # Adjust the best start to be relative to the original left sequence
-    best_start = Int(floor(((start+1)/2) + best_start) - 2)
-
-    return (best_start, best_score)
-end 
-
-
-### Align the right sequence relative to the left sequence and return the position and score of the best sequence match
-### Input:
-###          left - [String] of ACTGs that is the left (top) anchor sequence from which to align
-###         right - [String] of ACTGs that is the right (bottom) sequence to align to the left
-###         start - [Int] The position (index) relative to the left string to begin alignment of the right string
-###          stop - [Int] The position (index) relative ot the left string to terminate alignment 
-function optimized_align(left::String, right::String; start::Int=1, stop::Int=length(left)-5)
     # Process and encode input variables
     # Encoded indices
-    start = (2*start)-1
-    stop  = (2*stop) -1
+    start = (2*start)
+    stop  = (2*stop)
 
     # Encode sequences
-    left  =  encode_sequence(left)
-    right =  encode_sequence(right)
+    #scores = Vector{Float64}(undef, cld(stop-start,2))
+    scores = fill(0, length(query)+length(anchor)+1)
+    anchor  =  encode_sequence(anchor)
+    query =  encode_sequence(query)
 
-    scores = Vector{Float64}(undef, fld(stop-start,2)+1)
     ## For the desired search range, score the alignments 
+    full_bitmask = BitArray(x%2 == 0 for x = 1:length(query))
     for i in start:2:stop
-        offsetted  = false
-        left_start = i
-        left_stop  = i+length(right)-1
-        
-        # For the allow_offset case, aligning past the end of left
-        if (left_stop > length(left))
-            left_stop = length(left)
-            offsetted = true
-        end
-        @inbounds left_sub = left[left_start:left_stop]
-        
-        right_start = 1
-        right_stop  = length(right)
-        # For the allow_offset case, aligning past the end of left
-        if offsetted
-            right_stop = length(left_sub)
-        end
-        @inbounds right_sub = right[right_start:right_stop]
-        
-        ## bitwise left_sub xor not(right_sub) \xor+[tab] for the ⊻ symbol
-        ## e.g. if left_sub = [ 1 0 0 1 1 ] and right_sub = [ 0 0 1 0 0 ] then this would evaluate to [ 0 1 0 0 0 ]
-        align_sub = left_sub .⊻ .~right_sub
-        # Scores are essentially % of correct bases when quality scores aren't used
-        score = sum(align_sub) / length(align_sub)
-        @inbounds scores[fld(((i-start)+2),2)] = score
-    end
-    # Get the best score
-    best_score, best_start = findmax(scores)
-    # Adjust the best start to be relative to the original left sequence
-    best_start = Int(floor(((start+1)/2) + best_start) - 2)
+        if i < 0
+            overlap = min(i + length(query), length(anchor))
+            
+            anchor_start = 1
+            anchor_stop  = overlap
+            
+            query_start = -i + 1
+            query_stop  = min(query_start+overlap-1, length(query))
+            
+            bitmask = BitArray(x%2 == 0 for x = 1:(query_stop-query_start)+1)
+            
+        elseif (i + length(query)) <= length(anchor)
+            anchor_start = i + 1
+            anchor_stop  = i + length(query)
+            
+            query_start = 1
+            query_stop  = length(query)
+            
+            bitmask = full_bitmask
 
+        else
+            anchor_start = i + 1
+            anchor_stop  = length(anchor)
+            
+            query_start = 1
+            query_stop  = length(anchor) - i
+            
+            bitmask = BitArray(x%2 == 0 for x = 1:(query_stop-query_start)+1)
+            
+        end
+        @inbounds anchor_sub = anchor[anchor_start:anchor_stop]
+        @inbounds query_sub = query[query_start:query_stop]
+
+        ## Find matches
+        ##                         G   C   T                       A   G   T  
+        ## e.g. if anchor_sub = [ 1 0 0 1 1 1 ] and query_sub = [ 0 0 1 0 1 1 ]  (negate)
+        ##                      [ 1 0 0 1 1 1 ]      xor        [ 1 1 0 1 0 0 ]  =>  [ 0 1 0 0 1 1 ]
+        ##                                                                           [ 0 0 1 0 0 1 ] (right 1 bitshift)
+        ##                                                                           [ 0 0 0 0 0 1 ] (anded)
+        ##                                                                           [ X 0 X 0 X 1 ] (bitmask)
+        ##                                                                                 1         (sum) == total matches
+        ## \xor+[tab] for the ⊻ symbol
+        partial = (anchor_sub .⊻ .~query_sub)
+        align_sub = (partial .& (partial >> 1)) .& bitmask
+
+        score = sum(align_sub)
+        @inbounds scores[cld((i+length(query)),2)+1] = score
+    end
+
+    best_score, best_start = findmax(scores)
+    best_start = best_start - cld(length(query),2) - 1
     return (best_start, best_score)
 end 
+
+
+function print_alignment(top::String, bottom::String, offset::Int; width::Int=150)
+    flip = false
+
+    if (offset < 1)
+        flip = true
+        offset = abs(offset)
+        temp   = top
+        top    = bottom
+        bottom = temp
+    end
+
+
+    total_length = offset + length(bottom)
+
+    topover = top[(offset+1):end]
+    top     = top[1:offset]
+    botover = bottom[1:(end-offset)]
+    bottom  = bottom[length(botover):end]
+
+
+    if (total_length > width)
+        s_width = cld(width,3)
+        if (length(top) > s_width)
+            top = "..." * top[(end-s_width+3):end]
+        end
+        if (length(topover) > s_width)
+            midpoint = cld(s_width,2)
+            odd      = length(topover)%2
+            println(midpoint)
+            topover = topover[1:(midpoint-1-odd)] * "..." * topover[(end-midpoint+1):end]
+            botover = botover[1:(midpoint-1-odd)] * "..." * botover[(end-midpoint+1):end]
+        end
+        if (length(bottom) > s_width)
+            bottom = bottom[1:(s_width-3)] * "..."
+        end
+    end
+
+    if flip
+        println(" "^length(top),botover,bottom)
+        println(top,topover)
+    else
+        println(top,topover)
+        println(" "^length(top),botover,bottom)
+    end
+end
+
 
 ## Only called if there is overlap!! (yes, the if/elseifs are a bit redundant), otherwise there are two molecules 
 function make_molecule(read1::Fastq, read2::Fastq, offset::Int)
@@ -463,7 +454,7 @@ function main()
 
         # Align the two reads (quality align is almost 2x slower)
         #(alignment_offset, alignment_score) = quality_align(read1.sequence, read2.sequence)
-        (alignment_offset, alignment_score) = optimized_align(read1.sequence, read2.sequence)
+        (alignment_offset, alignment_score) = align(read1.sequence, read2.sequence)
         
         # If the read alignment doesn't goes well, continue
         if alignment_score <= alignment_threshold
@@ -474,7 +465,7 @@ function main()
 
         if leader != ""
             # Get alignment of leader sequence
-            (leader_start, leader_score) = optimized_align(read1.sequence, leader, start=0, stop=length(leader)+4)
+            (leader_start, leader_score) = align(read1.sequence, leader, start=0, stop=length(read1.sequence))
 
             if leader_score <= alignment_threshold
                 mode=="show" ? println(">>> poor leader alignment <<<") : nothing
@@ -488,9 +479,7 @@ function main()
 
         if follower_ != ""
             # Get alignment of follower sequence
-            start = length(read2.sequence)-(length(follower_)+3)
-            stop  = length(read2.sequence)-(length(follower_)-1)
-            (follower_start, follower_score) = optimized_align(read2.sequence, follower_, start=start, stop=stop)
+            (follower_start, follower_score) = align(read2.sequence, follower_, start=0, stop=length(read2.sequence))
             if follower_score <= alignment_threshold
                 mode=="show" ? println(">>> poor follower alignment <<<") : nothing
                 pfa_err += 1
@@ -530,16 +519,33 @@ function main()
         end
 
         if mode=="show"
-            println("\n",repeat("=",100))
+            println()
             if leader_start >= 0 && leader != ""
                 println(repeat("~", leader_start), leader)
             end
             println(phred2sym(read1.scores))
             println(read1.sequence)
-            println(repeat(" ", alignment_offset), read2.sequence)
-            println(repeat(" ", alignment_offset), phred2sym(read2.scores))
+            ## Bottom strand extends before top strand, need to truncate
+            if alignment_offset < 0
+                ss = phred2sym(read2.scores)
+                println("...", read2.sequence[(abs(alignment_offset)+4):end])
+                print("...")
+                ## Cant subset unicode character strings, need to manually subset! xP
+                for (i,j) in enumerate(eachindex(ss))
+                    if i>=(abs(alignment_offset)+4)
+                        print(ss[j])
+                    end
+                end
+                println()
+            else
+                println(repeat(" ", alignment_offset), read2.sequence)
+                println(repeat(" ", alignment_offset), phred2sym(read2.scores))
+            end
             if follower_ != ""
-                print(repeat(" ", alignment_offset+follower_start), follower_)
+                ## Bottom strand extends before top strand, need to truncate
+                if alignment_offset + follower_start > 0
+                    print(repeat(" ", alignment_offset+follower_start), follower_)
+                end
                 if length(read2.sequence)-follower_start-length(follower_) >= 0
                     print(repeat("~", length(read2.sequence)-follower_start-length(follower_)))
                 end
@@ -551,17 +557,17 @@ function main()
             else
                 println(repeat(" ", insert_start), insert)
             end
-            println("Length: ",length(insert))
-            println("\nOffset: ",insert_start)
-            @printf("Alignment score: %1.3f\n", alignment_score)
+            @printf("Length: %4d",length(insert))
+            @printf("\nOffset: %4d",insert_start)
+            @printf("\n\nAlignment score: %4.0f\n", alignment_score)
             if leader != ""
-                @printf("Leader score:    %1.3f\n", leader_score)
+                @printf("Leader score:    %4.0f\n", leader_score)
             end
             if follower_ != ""
-                @printf("Follower score:  %1.3f\n", follower_score)
+                @printf("Follower score:  %4.0f\n", follower_score)
             end
 
-            println(repeat("=",100))
+            println(repeat("=",25))
         end
         
         # Write output
@@ -612,6 +618,3 @@ function main()
 end
 
 main()
-
-
-
