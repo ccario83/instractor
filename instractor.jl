@@ -156,7 +156,7 @@ function align(anchor::String, query::String; start::Int=-length(query), stop::I
 
     # Encode sequences
     #scores = Vector{Float64}(undef, cld(stop-start,2))
-    scores = fill(0, length(query)+length(anchor)+1)
+    scores = fill(0.0, length(query)+length(anchor)+1)
     anchor  =  encode_sequence(anchor)
     query =  encode_sequence(query)
 
@@ -208,7 +208,12 @@ function align(anchor::String, query::String; start::Int=-length(query), stop::I
         partial = (anchor_sub .⊻ .~query_sub)
         align_sub = (partial .& (partial >> 1)) .& bitmask
 
-        score = sum(align_sub)
+        # Essentially the percent matched
+        if length(query_sub)>0
+            score = 2*sum(align_sub) / length(query_sub)
+        else
+            score = 0
+        end
         @inbounds scores[cld((i+length(query)),2)+1] = score
     end
 
@@ -344,7 +349,7 @@ function parse_commandline()
             help = "Alignment threshold before a read is discarded"
             arg_type = Float64
             default = 0.70
-        "--expected-length", "-e"            
+        "--expected-length", "-e"
             help = "The insert length between leader and follower sequences (will discard all others)"
             arg_type = Int
             default = -1
@@ -428,10 +433,11 @@ function main()
     pra_err = 0
     pla_err = 0
     pfa_err = 0
+    zil_err = 0
 
     while !eof(read1_ifh)
         entry += 1
-        mode=="show" ? print("Entry $entry:  ") : nothing
+        mode=="show" ? @printf("Entry: %6d ", entry) : nothing
         # Show a progress indicator if nothing else is requested
         if (mode=="summary" && (entry%1000==0))
             prog = ['⣀','⡄','⠆','⠃','⠉','⠘','⠰','⢠']
@@ -445,7 +451,7 @@ function main()
 
         # Check for empty strings (gzip doesn't handle eof properly...)
         if isempty(read1.sequence) || isempty(read2.sequence)
-            mode=="show" ? println(">>> empty entry <<<") : nothing
+            mode=="show" ? println("[ empty entry                           ]") : nothing
             continue
         end
         # Reverse complement read2's sequence and scores
@@ -458,7 +464,7 @@ function main()
         
         # If the read alignment doesn't goes well, continue
         if alignment_score <= alignment_threshold
-            mode=="show" ? println(">>> poor read alignment <<<") : nothing
+            mode=="show" ? @printf("[ poor read alignment     (%.2f < %.2f) ]\n", alignment_score, alignment_threshold) : nothing
             pra_err += 1
             continue
         end
@@ -468,7 +474,7 @@ function main()
             (leader_start, leader_score) = align(read1.sequence, leader, start=0, stop=length(read1.sequence))
 
             if leader_score <= alignment_threshold
-                mode=="show" ? println(">>> poor leader alignment <<<") : nothing
+                mode=="show" ? @printf("[ poor leader alignment   (%.2f < %.2f) ]\n", leader_score, alignment_threshold) : nothing
                 pla_err += 1
                 continue
             end
@@ -481,7 +487,7 @@ function main()
             # Get alignment of follower sequence
             (follower_start, follower_score) = align(read2.sequence, follower_, start=0, stop=length(read2.sequence))
             if follower_score <= alignment_threshold
-                mode=="show" ? println(">>> poor follower alignment <<<") : nothing
+                mode=="show" ? @printf("[ poor follower alignment (%.2f < %.2f) ]\n", follower_score, alignment_threshold) : nothing
                 pfa_err += 1
                 continue
             end
@@ -513,13 +519,18 @@ function main()
         scores = final_scores[insert_start+1:insert_end]
 
         if (expected_length!=-1 && expected_length!=length(insert))
-            mode=="show" ? @printf(">>> unexpected insert length (%d) <<<\n", length(insert)) : nothing
+            mode=="show" ? @printf("[ unexpected insert size  (%4d)        ]\n", length(insert)) : nothing
             uil_err += 1
+            continue
+        end
+        if (length(insert)==0)
+            mode=="show" ? @printf("[ 0 bp insert length                    ]\n") : nothing
+            zil_err += 1
             continue
         end
 
         if mode=="show"
-            println()
+            println(">>>")
             if leader_start >= 0 && leader != ""
                 println(repeat("~", leader_start), leader)
             end
@@ -559,15 +570,15 @@ function main()
             end
             @printf("Length: %4d",length(insert))
             @printf("\nOffset: %4d",insert_start)
-            @printf("\n\nAlignment score: %4.0f\n", alignment_score)
+            @printf("\n\nAlignment score: %1.2f\n", alignment_score)
             if leader != ""
-                @printf("Leader score:    %4.0f\n", leader_score)
+                @printf("Leader score:    %1.2f\n", leader_score)
             end
             if follower_ != ""
-                @printf("Follower score:  %4.0f\n", follower_score)
+                @printf("Follower score:  %1.2f\n", follower_score)
             end
 
-            println(repeat("=",25))
+            println(repeat("🧬 ",11),"\n")
         end
         
         # Write output
@@ -595,20 +606,23 @@ function main()
 
     ### Display summary results if requested
     if (mode in ["none", "summary", "show"])
-        @printf("Total processed:         \t%d\n", entry)
-        @printf("# errors:                \t%d\n", (entry-successful))
-        @printf("# successful:            \t%d\n", successful)
-        @printf("Successfully parsed:     \t%3.1f%%\n", 100*Float64(successful)/Float64(entry))
+        println()
+        println("\n🧬  Summary")
+        @printf("Total processed:     \t%8d\n", entry)
+        @printf("# errors:            \t%8d\n", (entry-successful))
+        @printf("# successful:        \t%8d\n", successful)
+        @printf("Successfully parsed: \t%8.2f%%\n", 100*Float64(successful)/Float64(entry))
 
-        println("\nError Distribution:")
-        @printf("Poor read alignment:     \t%d\n", pra_err)
+        println("\n🧬  Errors")
+        @printf("Read alignment:     \t%8d\n", pra_err)
         if leader != ""
-            @printf("Poor leader alignment:   \t%d\n", pla_err)
+            @printf("Leader alignment:   \t%8d\n", pla_err)
         end
         if follower_ != ""
-            @printf("Poor follower alignment: \t%d\n", pfa_err)
+            @printf("Follower alignment: \t%8d\n", pfa_err)
         end
-        @printf("Unexpected insert length:\t%d\n", uil_err)
+        @printf("Insert size:        \t%8d\n", uil_err)
+        @printf("No insert:          \t%8d\n\n", zil_err)
         @printf(stderr, "\rWrote \"%s\"\n", parsed_args["output"])
     end
 
@@ -618,3 +632,4 @@ function main()
 end
 
 main()
+
