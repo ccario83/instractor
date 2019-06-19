@@ -63,14 +63,20 @@ The script requires at minimum two read files, specified with `--read1` and `--r
 
 Screen output:
 ```bash
-Total processed:                 1001  
-Total errors:                    146  
-Successfully parsed:             85.4%  
-    
-Poor read alignment errors:      145  
-Unexpected insert length errors: 0  
-  
-Wrote "example/example1_output.fastq"  
+Processing ⡄
+
+🧬  Summary
+Total processed:     	    1001
+# errors:            	      15
+# successful:        	     986
+Successfully parsed: 	   98.50%
+
+🧬  Errors
+Read alignment:     	      14
+Insert size:        	       0
+No insert:          	       0
+
+Wrote "examples/example1_output.fastq" 
 ```
 
 <br/>
@@ -100,21 +106,27 @@ GAGGCGAAAGACGAATGCCGAAGCGCCATGGAAGCTCTCAAACAAAAGAGTCTTTATAACTGTCGATGTAAAAGGGGTAT
 Specifying expected insert length will filter out reads that don't meet this expectation, specify this number with `-e`
 
 ```bash
-./instractor.jl -e 108 --read1 examples/--read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example2_output.fastq
+./instractor.jl -e 108 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example2_output.fastq
 ```
 <br/>
 <br/>
 Screen output:
 
 ```bash
-Total processed:                 1001  
-Total errors:                    234  
-Successfully parsed:             76.6%  
- 
-Poor read alignment errors:      145  
-Unexpected insert length errors: 88  
-  
-Wrote "examples/example2_output.fastq"  
+Processing ⡄
+
+🧬  Summary
+Total processed:     	    1001
+# errors:            	     487
+# successful:        	     514
+Successfully parsed: 	   51.35%
+
+🧬  Errors
+Read alignment:     	      14
+Insert size:        	     472
+No insert:          	       0
+
+Wrote "examples/example2_output.fastq"
 ```
 
 <br/>
@@ -131,8 +143,8 @@ In addition to writing an output file, you can visualize how the alignment is ac
 Now you'll see entries like this printed to the screen:
 
 ```
-Entry 1000:  
-====================================================================================================
+Entry: 1000   
+>>>
 ▅▅▅▅▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆
 AACACGAGTCAAAGTCAAAAGAAAGGACAGCAATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGT
                                 ATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGTGCGAAGTCATAACCTCTTCGGATCTACATAAG
@@ -141,7 +153,11 @@ AACACGAGTCAAAGTCAAAAGAAAGGACAGCAATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGT
 
 ▅▅▅▅▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▅▅▅▅
 AACACGAGTCAAAGTCAAAAGAAAGGACAGCAATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGTGCGAAGTCATAACCTCTTCGGATCTACATAAG
-length: 108
+Length:  108
+Offset:    0
+
+Alignment score: 1.00
+<<<
 ```
 
 Here we see quality scores represented as vertical bars (the taller the better!), read 1's sequence, read 2's reverse complemented sequence and quality scores, and their overlap. The final molecule's quality, sequence, and length is also shown. Final base calls and quality scores are simply taken from the original read, on in the case where there is overlap from the read with the better quality.
@@ -160,25 +176,24 @@ Let's say we've used offset primers for sequencing and have a bit of flanking ve
 Now you\'ll see two additional sequences that correspond to the input leading and following sequences, as well as information about their alignment. The insert sequence is now the sequence between these. A '~' symbol is used to show where these leading/following sequences offset from the read:
 
 ```
-Entry 5434:  
-====================================================================================================
-~~~CGCAATTCCTTTAGTGGTACCTTTCTATTCTCACTCT
-▅▅▅▅▅▆▅▄▄▆▆▆▅▄▄▆▆▆▅▅▆▅▆▆▆▆▄▄▄▄▄▄▆▆▆▄▅▅▆▅▆▆▆▆▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▅▃▄▄▄▅▆▅▄▅▄▄▄▅▃
-CGCCGCAATTCCGTTAGAGGTACCTTTCGATTCTCACTCTACGTCTTCGTTGTTTATGACACCTGGAGGTTCGTC
-                 AGGTACCTTTCTCTTCTCACTCTACGTCTTCGTTGTTTATGACTGGAGGAGGATCTTACGATACTGATGAAAGC
-                 ▄▆▆▅▄▄▃▅▄▆▆▆▆▅▄▄▅▄▄▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▄▅▆▅▆▆▄▆▆▆▄▅▄▃▄▅▆▅▄▄▄▃▅▄▅▅▄▅▅▅▅
-                                                             GGTGGAGGTTCGGCCGAAACTGTTGAAAG~
+Entry: 5437   
+>>>
+CGCAATTCCTTTAGTGGTACCTTTCTATTCTCACTCT
+▅▅▅▅▅▅▄▄▆▆▆▆▄▄▆▅▅▅▆▆▆▄▄▆▆▆▅▄▄▄▆▆▆▄▄▄▄▅▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▄▄▄▅▆▄▆▆▄▄▃▅▅▄
+CGCAATTCCTTTAGTGCTACCTTTCGAGGCTCACTCTGATATGTCTCTTCATATTAGTGGTGGAGGTTCGGAAGAA
+              TGGTACCTTTCTATGCTCACTCTGATATGTCTCTTCATATTAGTGGAGGAGGTTCGGACGAAACTGTAGAAAGCCT
+              ▃▆▃▅▆▄▄▄▃▆▅▆▆▄▃▅▅▆▆▄▆▄▄▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▄▄▄▃▃▅▄▃▃▄▆▅▃▄▄▄▅▆▆▄▄▄▃▄▄▆▃▅▅▅▅▅
+                                                          GGTGGAGGTTCGGCCGAAACTGTTGAAAG~~~
 
-                                        ▆▆▆▆▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▅
-Extracted insert:                       ACGTCTTCGTTGTTTATGACA
-Length: 21
+                                     ▅▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆
+Extracted insert:                    GATATGTCTCTTCATATTAGT
+Length:   21
+Offset:   37
 
-Offset: 40
-Alignment score: 0.879
-Leader score:    0.946
-Follower score:  0.810
-====================================================================================================
-
+Alignment score: 0.92
+Leader score:    0.89
+Follower score:  0.90
+<<<
 ```
 <br/>
 <br/>
