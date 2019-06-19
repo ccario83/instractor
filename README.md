@@ -211,7 +211,7 @@ If downstream analysis is able to handle compressed fastq files, it may be desir
 Instractor also supports fasta/fasta.gz file formats with the `--format` argument. Use "fasta" or "fastq.gz" to specify: 
 
 ```bash
- ./instractor.jl --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq --format "fasta.gz" -o examples/example6_output.fastq.gz
+ ./instractor.jl --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq --format "fasta.gz" -o examples/example6_output.fasta.gz
 ```
 
 <br/>

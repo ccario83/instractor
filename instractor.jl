@@ -596,8 +596,9 @@ function main()
             line *= @sprintf("%s\n", join(scores))
         end
         if format=="fasta" || format=="fasta.gz"
-            line = @sprintf("\n>%s  %1.3f\n", read1.header, alignment_score)
+            line = @sprintf(">%s  %1.3f\n", read1.header, alignment_score)
             line *= insert
+            line *= "\n"
         end
         if mode=="stream"
             print(line)
