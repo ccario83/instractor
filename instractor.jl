@@ -437,7 +437,7 @@ function main()
 
     while !eof(read1_ifh)
         entry += 1
-        mode=="show" ? @printf("Entry: %6d ", entry) : nothing
+        mode=="show" ? @printf("Entry: %-6d ", entry) : nothing
         # Show a progress indicator if nothing else is requested
         if (mode=="summary" && (entry%1000==0))
             prog = ['⣀','⡄','⠆','⠃','⠉','⠘','⠰','⢠']
@@ -451,7 +451,7 @@ function main()
 
         # Check for empty strings (gzip doesn't handle eof properly...)
         if isempty(read1.sequence) || isempty(read2.sequence)
-            mode=="show" ? println("[ empty entry                           ]") : nothing
+            mode=="show" ? println("\e[1m\e[38;2;255;0;0;249m!\033[0m empty entry") : nothing
             continue
         end
         # Reverse complement read2's sequence and scores
@@ -464,7 +464,7 @@ function main()
         
         # If the read alignment doesn't goes well, continue
         if alignment_score <= alignment_threshold
-            mode=="show" ? @printf("[ poor read alignment     (%.2f < %.2f) ]\n", alignment_score, alignment_threshold) : nothing
+            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor read alignment     (%.2f < %.2f)\n", alignment_score, alignment_threshold) : nothing
             pra_err += 1
             continue
         end
@@ -474,7 +474,7 @@ function main()
             (leader_start, leader_score) = align(read1.sequence, leader, start=0, stop=length(read1.sequence))
 
             if leader_score <= alignment_threshold
-                mode=="show" ? @printf("[ poor leader alignment   (%.2f < %.2f) ]\n", leader_score, alignment_threshold) : nothing
+                mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor leader alignment   (%.2f < %.2f)\n", leader_score, alignment_threshold) : nothing
                 pla_err += 1
                 continue
             end
@@ -487,7 +487,7 @@ function main()
             # Get alignment of follower sequence
             (follower_start, follower_score) = align(read2.sequence, follower_, start=0, stop=length(read2.sequence))
             if follower_score <= alignment_threshold
-                mode=="show" ? @printf("[ poor follower alignment (%.2f < %.2f) ]\n", follower_score, alignment_threshold) : nothing
+                mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor follower alignment (%.2f < %.2f)\n", follower_score, alignment_threshold) : nothing
                 pfa_err += 1
                 continue
             end
@@ -519,18 +519,18 @@ function main()
         scores = final_scores[insert_start+1:insert_end]
 
         if (expected_length!=-1 && expected_length!=length(insert))
-            mode=="show" ? @printf("[ unexpected insert size  (%4d)        ]\n", length(insert)) : nothing
+            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m unexpected insert size  (%4d)\n", length(insert)) : nothing
             uil_err += 1
             continue
         end
         if (length(insert)==0)
-            mode=="show" ? @printf("[ 0 bp insert length                    ]\n") : nothing
+            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m 0 bp insert length\n") : nothing
             zil_err += 1
             continue
         end
 
         if mode=="show"
-            println(">>>")
+            println("\n\e[1m\e[38;2;0;255;0;249m>>>\033[0m")
             if leader_start >= 0 && leader != ""
                 println(repeat("~", leader_start), leader)
             end
@@ -578,7 +578,7 @@ function main()
                 @printf("Follower score:  %1.2f\n", follower_score)
             end
 
-            println(repeat("🧬 ",11),"\n")
+            println("\e[1m\e[38;2;0;255;0;249m<<<\033[0m")
         end
         
         # Write output
