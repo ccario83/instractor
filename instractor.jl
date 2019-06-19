@@ -324,15 +324,15 @@ function parse_commandline()
             arg_type = String  
             default = "summary"
         "--format", "-f"
-            help = "The output format ('tsv', 'fastq', 'fastq.gz') of written/streamed results"
+            help = "The output format ('tsv', 'fastq', 'fastq.gz', 'fasta', 'fasta.gz') of written/streamed results"
             arg_type = String
             default = "fastq"
         "--read1"
-            help = "The read 1 fastq.gz file"
+            help = "The read 1 fastq(.gz) file"
             arg_type = String
             required = true
         "--read2"
-            help = "The read 2 fastq.gz file"
+            help = "The read 2 fastq(.gz) file"
             arg_type = String
             required = true
         # CGCAATTCCTTTAGTGGTACCTTTCTATTCTCACTCT for example files
@@ -400,8 +400,8 @@ function main()
         print("Please choose 'none', 'summary', 'stream' or 'show' for '--mode'")
         exit()
     end
-    if !(format in ["tsv", "fastq", "fastq.gz"])
-        print("Please choose 'tsv', 'fastq', or 'fastq.gz' for '--format'")
+    if !(format in ["tsv", "fastq", "fastq.gz", "fasta", "fasta.gz"])
+        print("Please choose 'tsv', 'fastq', 'fastq.gz', 'fasta', or 'fasta.gz' for '--format'")
         exit()
     end
     # Make sure a file is specified if the mode is 'none' or 'summary'
@@ -412,7 +412,7 @@ function main()
 
     # Open the output file if needed and write a tsv output header if tsv format
     if (mode in ["none", "summary", "show"]) 
-        if (format=="fastq.gz")
+        if (format=="fastq.gz" ||format=="fasta.gz")
             output_ofh = GZip.open(output, "w")
         else
             output_ofh = open(output, "w")
@@ -595,6 +595,9 @@ function main()
             line *= "\n+\n"
             line *= @sprintf("%s\n", join(scores))
         end
+        if format=="fasta" || format=="fasta.gz"
+            line = @sprintf(">%s  %1.3f\n", read1.header, alignment_score)
+            line *= insert
         if mode=="stream"
             print(line)
         elseif mode=="none" || mode=="summary" || mode=="show"
