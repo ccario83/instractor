@@ -63,8 +63,6 @@ The script requires at minimum two read files, specified with `--read1` and `--r
 
 Screen output:
 ```bash
-Processing ⡄
-
 🧬  Summary
 Total processed:     	    1001
 # errors:            	      15
@@ -113,8 +111,6 @@ Specifying expected insert length will filter out reads that don't meet this exp
 Screen output:
 
 ```bash
-Processing ⡄
-
 🧬  Summary
 Total processed:     	    1001
 # errors:            	     487
@@ -209,6 +205,17 @@ If downstream analysis is able to handle compressed fastq files, it may be desir
 <br/>
 <br/>
 
+
+### Example 6: Writing output as fasta or compressed fasta.gz 
+
+Instractor also supports fasta/fasta.gz file formats with the `--format` argument. Use "fasta" or "fastq.gz" to specify: 
+
+```bash
+ ./instractor.jl --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq --format "fasta.gz" -o examples/example6_output.fastq.gz
+```
+
+<br/>
+<br/>
 ## Run Modes
 
 There are several modes in which to run this script, as specified from the `-m` argument. We've seen a couple, here is a complete list:
@@ -219,7 +226,7 @@ There are several modes in which to run this script, as specified from the `-m` 
 3) `stream` -- Stream the output instead of writing it to a file
 4) `show` -- Show the parsed alignments and quality scores  
 
-Additionally, instead of writing to **fastq**, read information can be written to a **tsv** file by specifying `-f tsv` when running the script
+Additionally, instead of writing to **fasta/fastq**, read information can be written to a **tsv** file by specifying `-f tsv` when running the script
 
 
 **Questions/Concerns**
