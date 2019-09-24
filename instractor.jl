@@ -353,6 +353,10 @@ function parse_commandline()
             help = "The insert length between leader and follower sequences (will discard all others)"
             arg_type = Int
             default = -1
+        "--minimum-length", "-n"
+            help = "The minimum insert length between leader and follower sequences (will discard all others)"
+            arg_type = Int
+            default = -1
         "--output", "-o"
             help = "The name of the file to write output"
             arg_type = String
@@ -392,6 +396,7 @@ function main()
     follower_    = reverse_complement(parsed_args["follower"])
     alignment_threshold = parsed_args["align-threshold"]
     expected_length     = parsed_args["expected-length"]
+    minimum_length      = parsed_args["minimum-length"]
     output       = parsed_args["output"]
     output_ofh   = nothing
 
@@ -519,6 +524,11 @@ function main()
         scores = final_scores[insert_start+1:insert_end]
 
         if (expected_length!=-1 && expected_length!=length(insert))
+            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m unexpected insert size  (%4d)\n", length(insert)) : nothing
+            uil_err += 1
+            continue
+        end
+        if (minimum_length!=-1 && length(insert)<minimum_length)
             mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m unexpected insert size  (%4d)\n", length(insert)) : nothing
             uil_err += 1
             continue
