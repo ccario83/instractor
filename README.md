@@ -187,8 +187,8 @@ Length:   21
 Offset:   37
 
 Alignment score: 0.92
-Leader score:    0.89
-Follower score:  0.90
+Leader score:    0.95
+Follower score:  0.93
 <<<
 ```
 <br/>
@@ -216,6 +216,42 @@ Instractor also supports fasta/fasta.gz file formats with the `--format` argumen
 
 <br/>
 <br/>
+
+
+### Example 7: Print options in 'show' mode
+
+There are a few different ways to control what sequence information is shown in 'show' mode. By default, the read alignment, leader/follower, and insert sequences are shown. You can also display the consensus sequence using `-C`. If you'd prefer to not show the read alignment, you can specify `-R`. The leader/follower sequences will then be shown on the consensus sequence in this case if `-C` is specified. Finally, to suppress showing the insert, you can use `-I`. In example 7, we choose to suppress the read alignment and show the consensus instead, while also keeping the insert sequence (by adding `-C -R` to the command): 
+
+```bash
+./instractor.jl -e 21 -m show -C -R --read1 examples/R1_trim.fastq.gz --read2 examples/R2_trim.fastq.gz -L CGCAATTCCTTTAGTGGTACCTTTCTATTCTCACTCT -F CTTTCAACAGTTTCGGCCGAACCTCCACC -o examples/example7_output.fastq 
+```
+
+You can compare the resulting output below to example 4 to see the difference.
+
+```
+Entry: 5437   
+>>>
+Consensus:
+CGCAATTCCTTTAGTGGTACCTTTCTATTCTCACTCT
+▅▅▅▅▅▅▄▄▆▆▆▆▄▄▆▅▅▅▆▆▆▄▄▆▆▆▅▄▄▄▆▆▆▄▄▄▄▅▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▄▄▄▅▆▄▆▆▄▄▄▅▅▄▆▄▄▄▃▄▄▆▃▅▅▅▅▅
+CGCAATTCCTTTAGTGCTACCTTTCTATGCTCACTCTGATATGTCTCTTCATATTAGTGGTGGAGGTTCGGACGAAACTGTAGAAAGCCT
+                                                          GGTGGAGGTTCGGCCGAAACTGTTGAAAG~~~
+
+Extracted insert:
+                                     ▅▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆
+                                     GATATGTCTCTTCATATTAGT
+
+Length:   21
+Offset:   37
+Alignment score: 0.92
+Leader score:    0.95
+Follower score:  0.93
+<<<
+```
+
+<br/>
+<br/>
+
 ## Run Modes
 
 There are several modes in which to run this script, as specified from the `-m` argument. We've seen a couple, here is a complete list:
