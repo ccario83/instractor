@@ -544,7 +544,7 @@ function main()
         end
 
         if length(consensus_sequence) < (length(leader) + length(follower_))
-            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m consensus is too short  (%.2f)\n", length(consensus_sequence)) : nothing
+            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m consensus is too short  (%d)\n", length(consensus_sequence)) : nothing
             pra_err += 1
             continue
         end
