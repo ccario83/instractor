@@ -134,14 +134,15 @@ end
 ### Align the query sequence against the anchor sequence and return the position and score of the best alignment
 ### NOTE: Passing sequences in reverse order will work, but will be slower
 ### Input:
-###        anchor - [String] of ACTGs that is the anchor sequence to align against
-###         query - [String] of ACTGs that will be aligned to the anchor sequence
-###         start - [Int] The position (1-indexed) relative to the anchor string to begin the alignment (default -query)
-###          stop - [Int] The position (1-indexed) relative to the anchor string to terminate the alignment (default length(anchor)+length(query))
+###              anchor - [String] of ACTGs that is the anchor sequence to align against
+###               query - [String] of ACTGs that will be aligned to the anchor sequence
+###               start    - [Int] The position (1-indexed) relative to the anchor string to begin the alignment (default -query)
+###               stop -     [Int] The position (1-indexed) relative to the anchor string to terminate the alignment (default length(anchor)+length(query))
+###   prioritize_within     [Bool] Whether query alignments that are entirely within the anchor should be prioritized over those overhanging
 ### Output:
 ###    best_start - The nucleotide position, relative to anchor where the best query match occurs (can be negative, zero indexed)
 ###    best_score - The number of matching nucleotides at the best_start position (no threshold is applied, can be a horrible score!)
-function align(anchor::String, query::String; start::Int=-length(query), stop::Int=length(anchor))
+function align(anchor::String, query::String; start::Int=-length(query), stop::Int=length(anchor), prioritize_within::Bool=false)
     if start < -length(query) || start > length(anchor)
         error("The alignment start position was misspecified")
     end
@@ -163,33 +164,51 @@ function align(anchor::String, query::String; start::Int=-length(query), stop::I
     ## For the desired search range, score the alignments 
     full_bitmask = BitArray(x%2 == 0 for x = 1:length(query))
     for i in start:2:stop
+        query_within = true
+        # The query sequence position is extending before the anchor sequence start
         if i < 0
+            query_within = false
+            
+            # Find out how much overlap there is
             overlap = min(i + length(query), length(anchor))
             
+            # Only evaluate the overlapped region of the anchor sequence
             anchor_start = 1
             anchor_stop  = overlap
             
+            # Only evaluate the overlapped region of the query sequence
             query_start = -i + 1
             query_stop  = min(query_start+overlap-1, length(query))
             
+            # Create the bitmask from overlapping sequences to evaluate sequence similarity
             bitmask = BitArray(x%2 == 0 for x = 1:(query_stop-query_start)+1)
-            
+        
+        # The query sequence position is within the anchor sequence
         elseif (i + length(query)) <= length(anchor)
+            # The full anchor sequence is evaluated
             anchor_start = i + 1
             anchor_stop  = i + length(query)
             
+            # The full query sequence is evaluated
             query_start = 1
             query_stop  = length(query)
             
+            # Create the bitmask to evaluate sequence similarity (in this case the full bitmask)
             bitmask = full_bitmask
 
+        # The query sequence position is extending past the anchor sequence start
         else
+            query_within = false
+
+            # Only evaluate the overlapped region of the anchor sequence
             anchor_start = i + 1
             anchor_stop  = length(anchor)
             
+            # Only evaluate the overlapped region of the query sequence
             query_start = 1
             query_stop  = length(anchor) - i
-            
+
+            # Create the bitmask from overlapping sequences to evaluate sequence similarity
             bitmask = BitArray(x%2 == 0 for x = 1:(query_stop-query_start)+1)
             
         end
@@ -210,7 +229,16 @@ function align(anchor::String, query::String; start::Int=-length(query), stop::I
 
         # Essentially the percent matched
         if length(query_sub)>0
-            score = 2*sum(align_sub) / length(query)
+            ## In some cases, we shouldn't allow great matches of small overlapping
+            ##  regions at the ends of the sequences to dominate ok matches fully 
+            ##  within the sequences. This is controlled by prioritize_within.
+            ## This is done by penalizing not fully within queries by 
+            ##  standardizing by the full length query instead of the sub-query.
+            if (!query_within && prioritize_within)
+                score = 2*sum(align_sub) / length(query)
+            else
+                score = 2*sum(align_sub) / length(query_sub)
+            end
         else
             score = 0
         end
@@ -270,8 +298,8 @@ function print_alignment(top::String, bottom::String, offset::Int; width::Int=15
 end
 
 
-## Only called if there is overlap!! (yes, the if/elseifs are a bit redundant), otherwise there are two molecules 
-function make_molecule(read1::Fastq, read2::Fastq, offset::Int)
+## Build a consensus sequence from the two reads
+function build_consensus_sequence(read1::Fastq, read2::Fastq, offset::Int)
     final_size   = offset+length(read2.sequence)
     final        = Vector{Char}(undef, final_size)
     final_scores = Vector{Char}(undef, final_size)
@@ -361,16 +389,24 @@ function parse_commandline()
             help = "The maximum insert length between leader and follower sequences (will discard all others)"
             arg_type = Int
             default = -1
+        "--suppress-reads", "-R"
+            action = :store_true
+            help = "Whether to suppress printing the overlapped read sequences and their quality scores in show mode"
+        "--suppress-insert", "-I"
+            action = :store_true
+            help = "Whether to suppress printing the insert sequence and its quality scores in show mode"
+        "--print-consensus", "-C"
+            action = :store_true
+            help = "Whether to print the consensus sequence and its quality scores in show mode"
         "--output", "-o"
             help = "The name of the file to write output"
             arg_type = String
             default = ""
+            required = true
     end
 
     return parse_args(s)
 end
-
-
 
 
 ## The main function 
@@ -402,6 +438,9 @@ function main()
     expected_length     = parsed_args["expected-length"]
     minimum_length      = parsed_args["minimum-length"]
     maximum_length      = parsed_args["maximum-length"]
+    suppress_reads      = parsed_args["suppress-reads"]
+    suppress_insert     = parsed_args["suppress-insert"]
+    print_consensus     = parsed_args["print-consensus"]
     output       = parsed_args["output"]
     output_ofh   = nothing
 
@@ -468,9 +507,8 @@ function main()
         read2.sequence = reverse_complement(read2.sequence)
         read2.scores = reverse(read2.scores)
 
-        # Align the two reads (quality align is almost 2x slower)
-        #(alignment_offset, alignment_score) = quality_align(read1.sequence, read2.sequence)
-        (alignment_offset, alignment_score) = align(read1.sequence, read2.sequence)
+        # Align the two reads
+        (alignment_offset, alignment_score) = align(read1.sequence, read2.sequence, prioritize_within=false)
         
         # If the read alignment doesn't goes well, continue
         if alignment_score < alignment_threshold
@@ -479,9 +517,30 @@ function main()
             continue
         end
 
+
+        # Try to make a consensus sequence
+        top_strand = ""
+        top_strand_scores = ""
+        bot_strand = ""
+        bot_strand_scores = ""
+        # If there is good alignment, make a consensus sequence, otherwise keep them separate
+        if alignment_score >= alignment_threshold
+            (consensus_sequence, consensus_scores) = build_consensus_sequence(read1, read2, alignment_offset)
+        else
+            top_strand        = read1.sequence
+            top_strand_scores = read1.scores
+            bot_strand        = read2.sequence
+            bot_strand_scores = read2.scores
+            ## The consensus sequence is a concatenated product of both in the case of poor alignment
+            consensus_sequence = top_strand * bot_strand
+            consensus_scores   = top_strand_scores * bot_strand_scores
+        end
+
+
+        # Find the leader sequence
         if leader != ""
             # Get alignment of leader sequence
-            (leader_start, leader_score) = align(read1.sequence, leader, start=0, stop=length(read1.sequence))
+            (leader_start, leader_score) = align(consensus_sequence, leader, start=0, stop=length(consensus_sequence))
 
             if leader_score < alignment_threshold
                 mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor leader alignment   (%.2f < %.2f)\n", leader_score, alignment_threshold) : nothing
@@ -493,40 +552,26 @@ function main()
             leader_score = 0
         end
 
+
+        # Find the follower sequence
         if follower_ != ""
             # Get alignment of follower sequence
-            (follower_start, follower_score) = align(read2.sequence, follower_, start=0, stop=length(read2.sequence))
+            (follower_start, follower_score) = align(consensus_sequence, follower_, start=0, stop=length(consensus_sequence))
             if follower_score < alignment_threshold
                 mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor follower alignment (%.2f < %.2f)\n", follower_score, alignment_threshold) : nothing
                 pfa_err += 1
                 continue
             end
         else
-            follower_start = length(read2.sequence)
+            follower_start = length(consensus_sequence)
             follower_score = 0
         end
 
-        ## Get the insert coordinates
+        ## Get the insert and its coordinates
         insert_start = (leader_start+length(leader))
-        insert_end   = (alignment_offset+follower_start)
-
-        # make the final molecule
-        molecule1 = ""
-        molecule1_scores = ""
-        molecule2 = ""
-        molecule2_scores = ""
-        if alignment_score >= alignment_threshold
-            (molecule1, molecule1_scores) = make_molecule(read1, read2, alignment_offset)
-        else
-            molecule1        = read1.sequence
-            molecule1_scores = read1.scores
-            molecule2        = read2.sequence
-            molecule2_scores = read2.scores
-        end
-        final_molecule = molecule1 * molecule2
-        final_scores   = molecule1_scores * molecule2_scores
-        insert = final_molecule[insert_start+1:insert_end]
-        scores = final_scores[insert_start+1:insert_end]
+        insert_end   = (follower_start)
+        insert = consensus_sequence[insert_start+1:insert_end]
+        scores = consensus_scores[insert_start+1:insert_end]
 
         if (expected_length!=-1 && expected_length!=length(insert))
             mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m unexpected insert size  (%4d)\n", length(insert)) : nothing
@@ -552,46 +597,74 @@ function main()
 
         if mode=="show"
             println("\n\e[1m\e[38;2;0;255;0;249m>>>\033[0m")
-            if leader_start >= 0 && leader != ""
-                println(repeat("~", leader_start), leader)
-            end
-            println(phred2sym(read1.scores))
-            println(read1.sequence)
-            ## Bottom strand extends before top strand, need to truncate
-            if alignment_offset < 0
-                ss = phred2sym(read2.scores)
-                println("...", read2.sequence[(abs(alignment_offset)+4):end])
-                print("...")
-                ## Cant subset unicode character strings, need to manually subset! xP
-                for (i,j) in enumerate(eachindex(ss))
-                    if i>=(abs(alignment_offset)+4)
-                        print(ss[j])
-                    end
+            
+            # Print the reads (overlapped) if requested
+            if (!suppress_reads)
+                # Print the leader sequence if not shown with the consensus sequence
+                println("Aligned Reads:")
+                if (leader_start >= 0 && leader != "" && !print_consensus)
+                    println(repeat("~", leader_start), leader)
                 end
-                println()
-            else
-                println(repeat(" ", alignment_offset), read2.sequence)
-                println(repeat(" ", alignment_offset), phred2sym(read2.scores))
-            end
-            if follower_ != ""
+                
+                # Print the top read
+                println(phred2sym(read1.scores))
+                println(read1.sequence)
+                
+                # Print the bottom read
                 ## Bottom strand extends before top strand, need to truncate
-                if alignment_offset + follower_start > 0
-                    print(repeat(" ", alignment_offset+follower_start), follower_)
+                if alignment_offset < 0
+                    ss = phred2sym(read2.scores)
+                    println("...", read2.sequence[(abs(alignment_offset)+4):end])
+                    print("...")
+                    ## Cant subset unicode character strings, need to manually subset! xP
+                    for (i,j) in enumerate(eachindex(ss))
+                        if i>=(abs(alignment_offset)+4)
+                            print(ss[j])
+                        end
+                    end
+                    println()
+                ## Otherwise just print directly 
+                else
+                    println(repeat(" ", alignment_offset), read2.sequence)
+                    println(repeat(" ", alignment_offset), phred2sym(read2.scores))
                 end
-                if length(read2.sequence)-follower_start-length(follower_) >= 0
-                    print(repeat("~", length(read2.sequence)-follower_start-length(follower_)))
+
+                # Print the follower sequence if not shown with the consensus sequence
+                if (follower_start < length(consensus_sequence) && !print_consensus)
+                    print(repeat(" ", follower_start), follower_)
+                    print(repeat("~", length(consensus_sequence)-follower_start-length(follower_)))
                 end
             end
-            print("\n\n")
-            println(repeat(" ",insert_start), phred2sym(scores))
-            if (insert_start>17)
-                println("Extracted insert:", repeat(" ", insert_start-17), insert)
-            else
+            
+            # Print the consensus sequence if requested
+            if (print_consensus)
+                println("\n\nConsensus:")
+                # Print the leader sequence
+                if (leader_start >= 0 && leader != "")
+                    println(repeat("~", leader_start), leader)
+                end
+                
+                # Print the consensus sequence
+                println(phred2sym(consensus_scores))
+                println(consensus_sequence)
+                
+                # Print the follower sequence
+                if (follower_start < length(consensus_sequence))
+                    print(repeat(" ", follower_start), follower_)
+                    print(repeat("~", length(consensus_sequence)-follower_start-length(follower_)))
+                end
+            end
+            
+            if (!suppress_insert)
+                print("\n\n")
+                println("Extracted insert:")
+                println(repeat(" ",insert_start), phred2sym(scores))
                 println(repeat(" ", insert_start), insert)
             end
+            println()
             @printf("Length: %4d",length(insert))
             @printf("\nOffset: %4d",insert_start)
-            @printf("\n\nAlignment score: %1.2f\n", alignment_score)
+            @printf("\nAlignment score: %1.2f\n", alignment_score)
             if leader != ""
                 @printf("Leader score:    %1.2f\n", leader_score)
             end
