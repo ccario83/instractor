@@ -536,11 +536,10 @@ function main()
             consensus_scores   = top_strand_scores * bot_strand_scores
         end
 
-
         # Find the leader sequence
         if leader != ""
             # Get alignment of leader sequence
-            (leader_start, leader_score) = align(consensus_sequence, leader, start=0, stop=length(consensus_sequence))
+            (leader_start, leader_score) = align(consensus_sequence, leader, start=0, stop=length(consensus_sequence)-length(leader)+1)
 
             if leader_score < alignment_threshold
                 mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor leader alignment   (%.2f < %.2f)\n", leader_score, alignment_threshold) : nothing
@@ -556,7 +555,7 @@ function main()
         # Find the follower sequence
         if follower_ != ""
             # Get alignment of follower sequence
-            (follower_start, follower_score) = align(consensus_sequence, follower_, start=0, stop=length(consensus_sequence))
+            (follower_start, follower_score) = align(consensus_sequence, follower_, start=0, stop=length(consensus_sequence)-length(leader)+1)
             if follower_score < alignment_threshold
                 mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor follower alignment (%.2f < %.2f)\n", follower_score, alignment_threshold) : nothing
                 pfa_err += 1
@@ -640,7 +639,7 @@ function main()
             if (print_consensus)
                 if (!suppress_reads)
                     print("\n\n")
-                end
+                end 
                 println("Consensus:")
                 # Print the leader sequence
                 if (leader_start >= 0 && leader != "")
