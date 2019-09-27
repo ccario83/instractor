@@ -533,6 +533,11 @@ function main()
             uil_err += 1
             continue
         end
+        if (length(insert)==0)
+            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m 0 bp insert length\n") : nothing
+            zil_err += 1
+            continue
+        end
         if (minimum_length!=-1 && length(insert)<minimum_length)
             mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m insert size too short   (%4d)\n", length(insert)) : nothing
             uil_err += 1
@@ -543,11 +548,7 @@ function main()
             uil_err += 1
             continue
         end
-        if (length(insert)==0)
-            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m 0 bp insert length\n") : nothing
-            zil_err += 1
-            continue
-        end
+
 
         if mode=="show"
             println("\n\e[1m\e[38;2;0;255;0;249m>>>\033[0m")
