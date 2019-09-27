@@ -543,6 +543,12 @@ function main()
             consensus_scores   = top_strand_scores * bot_strand_scores
         end
 
+        if length(consensus_sequence) < (length(leader) + length(follower_))
+            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m consensus is too short  (%.2f < %.2f)\n", leader_score, alignment_threshold) : nothing
+            pra_err += 1
+            continue
+        end
+
         # Find the leader sequence
         if leader != ""
             # Get alignment of leader sequence
