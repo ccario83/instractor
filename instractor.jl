@@ -638,7 +638,10 @@ function main()
             
             # Print the consensus sequence if requested
             if (print_consensus)
-                println("\n\nConsensus:")
+                if (!suppress_reads)
+                    print("\n\n")
+                end
+                println("Consensus:")
                 # Print the leader sequence
                 if (leader_start >= 0 && leader != "")
                     println(repeat("~", leader_start), leader)
