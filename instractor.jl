@@ -142,6 +142,13 @@ end
 ### Output:
 ###    best_start - The nucleotide position, relative to anchor where the best query match occurs (can be negative, zero indexed)
 ###    best_score - The number of matching nucleotides at the best_start position (no threshold is applied, can be a horrible score!)
+
+### Coordinates toy example:
+### 0123456789
+### ACGGCACATC  length 10 (anchor)
+### ACGG        length 4, start 0
+###       CATC  length 4, stop 6 (10-4)
+
 function align(anchor::String, query::String; start::Int=-length(query), stop::Int=length(anchor), prioritize_within::Bool=false)
     if start < -length(query) || start > length(anchor)
         error("The alignment start position was misspecified")
@@ -539,7 +546,7 @@ function main()
         # Find the leader sequence
         if leader != ""
             # Get alignment of leader sequence
-            (leader_start, leader_score) = align(consensus_sequence, leader, start=0, stop=length(consensus_sequence)-length(leader)+1)
+            (leader_start, leader_score) = align(consensus_sequence, leader, start=0, stop=length(consensus_sequence)-length(leader))
 
             if leader_score < alignment_threshold
                 mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor leader alignment   (%.2f < %.2f)\n", leader_score, alignment_threshold) : nothing
@@ -555,7 +562,7 @@ function main()
         # Find the follower sequence
         if follower_ != ""
             # Get alignment of follower sequence
-            (follower_start, follower_score) = align(consensus_sequence, follower_, start=0, stop=length(consensus_sequence)-length(leader)+1)
+            (follower_start, follower_score) = align(consensus_sequence, follower_, start=0, stop=length(consensus_sequence)-length(leader))
             if follower_score < alignment_threshold
                 mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor follower alignment (%.2f < %.2f)\n", follower_score, alignment_threshold) : nothing
                 pfa_err += 1
