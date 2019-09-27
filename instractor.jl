@@ -210,7 +210,7 @@ function align(anchor::String, query::String; start::Int=-length(query), stop::I
 
         # Essentially the percent matched
         if length(query_sub)>0
-            score = 2*sum(align_sub) / length(query_sub)
+            score = 2*sum(align_sub) / length(query)
         else
             score = 0
         end
@@ -357,6 +357,10 @@ function parse_commandline()
             help = "The minimum insert length between leader and follower sequences (will discard all others)"
             arg_type = Int
             default = -1
+        "--maximum-length", "-x"
+            help = "The maximum insert length between leader and follower sequences (will discard all others)"
+            arg_type = Int
+            default = -1
         "--output", "-o"
             help = "The name of the file to write output"
             arg_type = String
@@ -397,6 +401,7 @@ function main()
     alignment_threshold = parsed_args["align-threshold"]
     expected_length     = parsed_args["expected-length"]
     minimum_length      = parsed_args["minimum-length"]
+    maximum_length      = parsed_args["maximum-length"]
     output       = parsed_args["output"]
     output_ofh   = nothing
 
@@ -529,7 +534,12 @@ function main()
             continue
         end
         if (minimum_length!=-1 && length(insert)<minimum_length)
-            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m unexpected insert size  (%4d)\n", length(insert)) : nothing
+            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m insert size too short   (%4d)\n", length(insert)) : nothing
+            uil_err += 1
+            continue
+        end
+        if (maximum_length!=-1 && length(insert)>maximum_length)
+            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m insert size too long   (%4d)\n", length(insert)) : nothing
             uil_err += 1
             continue
         end
