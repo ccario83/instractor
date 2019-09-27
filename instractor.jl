@@ -562,7 +562,7 @@ function main()
         # Find the follower sequence
         if follower_ != ""
             # Get alignment of follower sequence
-            (follower_start, follower_score) = align(consensus_sequence, follower_, start=0, stop=length(consensus_sequence)-length(leader))
+            (follower_start, follower_score) = align(consensus_sequence, follower_, start=0, stop=length(consensus_sequence)-length(follower_))
             if follower_score < alignment_threshold
                 mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor follower alignment (%.2f < %.2f)\n", follower_score, alignment_threshold) : nothing
                 pfa_err += 1
