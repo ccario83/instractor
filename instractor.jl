@@ -473,7 +473,7 @@ function main()
         (alignment_offset, alignment_score) = align(read1.sequence, read2.sequence)
         
         # If the read alignment doesn't goes well, continue
-        if alignment_score <= alignment_threshold
+        if alignment_score < alignment_threshold
             mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor read alignment     (%.2f < %.2f)\n", alignment_score, alignment_threshold) : nothing
             pra_err += 1
             continue
@@ -483,7 +483,7 @@ function main()
             # Get alignment of leader sequence
             (leader_start, leader_score) = align(read1.sequence, leader, start=0, stop=length(read1.sequence))
 
-            if leader_score <= alignment_threshold
+            if leader_score < alignment_threshold
                 mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor leader alignment   (%.2f < %.2f)\n", leader_score, alignment_threshold) : nothing
                 pla_err += 1
                 continue
@@ -496,7 +496,7 @@ function main()
         if follower_ != ""
             # Get alignment of follower sequence
             (follower_start, follower_score) = align(read2.sequence, follower_, start=0, stop=length(read2.sequence))
-            if follower_score <= alignment_threshold
+            if follower_score < alignment_threshold
                 mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m poor follower alignment (%.2f < %.2f)\n", follower_score, alignment_threshold) : nothing
                 pfa_err += 1
                 continue
