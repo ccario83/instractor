@@ -383,7 +383,14 @@ function parse_commandline()
         "--align-threshold", "-a"
             help = "Alignment threshold before a read is discarded"
             arg_type = Float64
-            default = 0.70
+            default = 0.60
+        "--disable-strict-align", "-d"
+            action = :store_true
+            help = "When aligning reads, whether to disable strict scoring of short overlaps (OK if you have high quality but short overlapping sequences"
+        "--minimum-overlap", "-O"
+            help = "The minimum overlap of reads required for further analysis"
+            arg_type = Int
+            default = -1
         "--expected-length", "-e"
             help = "The insert length between leader and follower sequences (will discard all others)"
             arg_type = Int
@@ -442,6 +449,8 @@ function main()
     leader       = parsed_args["leader"]
     follower_    = reverse_complement(parsed_args["follower"])
     alignment_threshold = parsed_args["align-threshold"]
+    prioritize_within   =!parsed_args["disable-strict-align"]
+    minimum_overlap     = parsed_args["minimum-overlap"]
     expected_length     = parsed_args["expected-length"]
     minimum_length      = parsed_args["minimum-length"]
     maximum_length      = parsed_args["maximum-length"]
@@ -507,7 +516,7 @@ function main()
 
         # Check for empty strings (gzip doesn't handle eof properly...)
         if isempty(read1.sequence) || isempty(read2.sequence)
-            mode=="show" ? println("\e[1m\e[38;2;255;0;0;249m!\033[0m empty entry") : nothing
+            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m empty entry") : nothing
             continue
         end
         # Reverse complement read2's sequence and scores
@@ -515,7 +524,7 @@ function main()
         read2.scores = reverse(read2.scores)
 
         # Align the two reads
-        (alignment_offset, alignment_score) = align(read1.sequence, read2.sequence, prioritize_within=false)
+        (alignment_offset, alignment_score) = align(read1.sequence, read2.sequence, prioritize_within=prioritize_within)
         
         # If the read alignment doesn't goes well, continue
         if alignment_score < alignment_threshold
@@ -542,12 +551,20 @@ function main()
             consensus_sequence = top_strand * bot_strand
             consensus_scores   = top_strand_scores * bot_strand_scores
         end
+        overlap_size = (length(read1.sequence) + length(read2.sequence)) - length(consensus_sequence)
 
         if length(consensus_sequence) < (length(leader) + length(follower_))
             mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m consensus is too short  (%d)\n", length(consensus_sequence)) : nothing
             pra_err += 1
             continue
         end
+
+        if (minimum_overlap!=-1) && (overlap_size < minimum_overlap)
+            mode=="show" ? @printf("\e[1m\e[38;2;255;0;0;249m!\033[0m overlap is too short    (%d < %d)\n", overlap_size, minimum_overlap) : nothing
+            pra_err += 1
+            continue
+        end
+
 
         # Find the leader sequence
         if leader != ""
