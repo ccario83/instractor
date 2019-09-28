@@ -65,16 +65,16 @@ Screen output:
 ```bash
 🧬  Summary
 Total processed:     	    1001
-# errors:            	      15
-# successful:        	     986
-Successfully parsed: 	   98.50%
+# errors:            	     988
+# successful:        	      13
+Successfully parsed: 	    1.30%
 
 🧬  Errors
-Read alignment:     	      14
+Read alignment:     	     987
 Insert size:        	       0
 No insert:          	       0
 
-Wrote "examples/example1_output.fastq" 
+Wrote "examples/example1_output.fastq"
 ```
 
 <br/>
@@ -101,10 +101,18 @@ GAGGCGAAAGACGAATGCCGAAGCGCCATGGAAGCTCTCAAACAAAAGAGTCTTTATAACTGTCGATGTAAAAGGGGTAT
 
 ### Example 2: Specifying expected insert lengths 
 
-Specifying expected insert length will filter out reads that don't meet this expectation, specify this number with `-e`
+If reads are entirely within the insert sequence (that is, there is no vector sequence to trim) and your reads overlap, you can specify the expected consensus sequence length (typically [2 x read length] - overlap) with `-e`. You can also specify the minimum read overlap with `-O`. In cases where the overlapped region is short relative to the read lengths, poor alignment scores may result. Instead of relaxing the alignment score threshold, you can disable strict alignment with `-d`, which doesn't penalize short alignments as much. This is advisable only if you have high quality overlapping regions that are significantly shorter than the read lengths and you've also specified the expected insert and/or overlap size: 
+
+```
+Total insert size of 108 and overlap of 44 (we'll set the threshold to 40)
+▅▅▅▅▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆
+AACACGAGTCAAAGTCAAAAGAAAGGACAGCAATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGT
+                                ATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGTGCGAAGTCATAACCTCTTCGGATCTACATAAG
+                                ▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▅▅▅▅
+```
 
 ```bash
-./instractor.jl -e 108 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example2_output.fastq
+./instractor.jl -d -O 40 -e 108 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example2_output.fastq
 ```
 <br/>
 <br/>
@@ -113,13 +121,13 @@ Screen output:
 ```bash
 🧬  Summary
 Total processed:     	    1001
-# errors:            	     487
-# successful:        	     514
-Successfully parsed: 	   51.35%
+# errors:            	     493
+# successful:        	     508
+Successfully parsed: 	   50.75%
 
 🧬  Errors
-Read alignment:     	      14
-Insert size:        	     472
+Read alignment:     	      52
+Insert size:        	     440
 No insert:          	       0
 
 Wrote "examples/example2_output.fastq"
@@ -133,7 +141,7 @@ Wrote "examples/example2_output.fastq"
 In addition to writing an output file, you can visualize how the alignment is actually going by changing the mode to 'show' with `-m`:
 
 ```bash
-./instractor.jl -e 108 -m show --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example3_output.fastq
+./instractor.jl -m show -d -O 40 -e 108 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example3_output.fastq
 ```
 
 Now you'll see entries like this printed to the screen:
@@ -199,7 +207,7 @@ Follower score:  0.93
 If downstream analysis is able to handle compressed fastq files, it may be desirable to save disk space and write them directly. To do so, simply change the `--format` argument to "fastq.gz": 
 
 ```bash
- ./instractor.jl --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq --format "fastq.gz" -o examples/example5_output.fastq.gz
+ ./instractor.jl -d -O 40 -e 108 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq --format "fastq.gz" -o examples/example5_output.fastq.gz
 ```
 
 <br/>
@@ -223,7 +231,7 @@ Instractor also supports fasta/fasta.gz file formats with the `--format` argumen
 There are a few different ways to control what sequence information is shown in 'show' mode. By default, the read alignment, leader/follower, and insert sequences are shown. You can also display the consensus sequence using `-C`. If you'd prefer to not show the read alignment, you can specify `-R`. The leader/follower sequences will then be shown on the consensus sequence in this case if `-C` is specified. Finally, to suppress showing the insert, you can use `-I`. In example 7, we choose to suppress the read alignment and show the consensus instead, while also keeping the insert sequence (by adding `-C -R` to the command): 
 
 ```bash
-./instractor.jl -e 21 -m show -C -R --read1 examples/R1_trim.fastq.gz --read2 examples/R2_trim.fastq.gz -L CGCAATTCCTTTAGTGGTACCTTTCTATTCTCACTCT -F CTTTCAACAGTTTCGGCCGAACCTCCACC -o examples/example7_output.fastq 
+./instractor.jl -a .5 -e 21 -m show -C -R --read1 examples/R1_trim.fastq.gz --read2 examples/R2_trim.fastq.gz -L CGCAATTCCTTTAGTGGTACCTTTCTATTCTCACTCT -F CTTTCAACAGTTTCGGCCGAACCTCCACC -o examples/example7_output.fastq 
 ```
 
 You can compare the resulting output below to example 4 to see the difference.
@@ -243,9 +251,10 @@ Extracted insert:
 
 Length:   21
 Offset:   37
-Alignment score: 0.92
+Alignment score: 0.75
 Leader score:    0.95
 Follower score:  0.93
+
 <<<
 ```
 
