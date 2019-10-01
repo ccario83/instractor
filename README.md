@@ -107,10 +107,8 @@ If reads are entirely within the insert sequence (that is, there is no vector se
 
 ```
 Total insert size of 108 and overlap of 44 (we'll set the threshold to 40)
-▅▅▅▅▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆
 AACACGAGTCAAAGTCAAAAGAAAGGACAGCAATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGT
                                 ATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGTGCGAAGTCATAACCTCTTCGGATCTACATAAG
-                                ▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▅▅▅▅
 ```
 
 ```bash
