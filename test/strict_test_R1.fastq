@@ -1,0 +1,4 @@
+# Test with julia instractor.jl -m show -a0 --read1 test/strict_test_R1.fastq --read2 test/strict_test_R2.fastq --output /dev/null, then add -s
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGCGCCGCGCGCGCGGG
++                           notice this mutation => |              
+G<FGGGFFGGGFEBFGGGCGGGGGGGGGGGGDFGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG

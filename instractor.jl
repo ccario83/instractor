@@ -149,7 +149,7 @@ end
 ### ACGG        length 4, start 0
 ###       CATC  length 4, stop 6 (10-4)
 
-function align(anchor::String, query::String; start::Int=-length(query), stop::Int=length(anchor), prioritize_within::Bool=false)
+function align(anchor::String, query::String; start::Int=-length(query), stop::Int=length(anchor), prioritize_within::Bool=true)
     if start < -length(query) || start > length(anchor)
         error("The alignment start position was misspecified")
     end
@@ -164,9 +164,10 @@ function align(anchor::String, query::String; start::Int=-length(query), stop::I
 
     # Encode sequences
     #scores = Vector{Float64}(undef, cld(stop-start,2))
-    scores = fill(0.0, length(query)+length(anchor)+1)
-    anchor  =  encode_sequence(anchor)
-    query =  encode_sequence(query)
+    scores = fill(0.0, length(query)+length(anchor)+1) # To store query scores
+    q_lens = fill(0.0, length(query)+length(anchor)+1) # To store query_sub lengths
+    anchor = encode_sequence(anchor)
+    query  = encode_sequence(query)
 
     ## For the desired search range, score the alignments 
     full_bitmask = BitArray(x%2 == 0 for x = 1:length(query))
@@ -234,7 +235,6 @@ function align(anchor::String, query::String; start::Int=-length(query), stop::I
         partial = (anchor_sub .⊻ .~query_sub)
         align_sub = (partial .& (partial >> 1)) .& bitmask
 
-        # Essentially the percent matched
         if length(query_sub)>0
             ## In some cases, we shouldn't allow great matches of small overlapping
             ##  regions at the ends of the sequences to dominate ok matches fully 
@@ -242,17 +242,29 @@ function align(anchor::String, query::String; start::Int=-length(query), stop::I
             ## This is done by penalizing not fully within queries by 
             ##  standardizing by the full length query instead of the sub-query.
             if (!query_within && prioritize_within)
-                score = 2*sum(align_sub) / length(query)
+                score = 2*sum(align_sub) / length(query)     ## Consider all bases of query
             else
-                score = 2*sum(align_sub) / length(query_sub)
+                score = 2*sum(align_sub) / length(query_sub) ## Only consider overlapping bases
             end
         else
             score = 0
         end
         @inbounds scores[cld((i+length(query)),2)+1] = score
+        @inbounds q_lens[cld((i+length(query)),2)+1] = length(query_sub)
     end
 
-    best_score, best_start = findmax(scores)
+    # Even if not priortizing within, still should pick the longest match
+    if prioritize_within
+        ## Same as in else, but faster since score is already standardized by query length
+        best_score, best_start = findmax(scores)  
+    else
+        ## Get all maximum locations
+        best_locs = findall(scores .== maximum(scores))
+        ## Of the best locations, get the position [2] of the longest
+        best_start = best_locs[findmax(q_lens[best_locs])[2]]
+        ## Get the score at that best longest
+        best_score = scores[best_start]
+    end
     best_start = best_start - cld(length(query),2) - 1
     return (best_start, best_score)
 end 
@@ -383,10 +395,10 @@ function parse_commandline()
         "--align-threshold", "-a"
             help = "Alignment threshold before a read is discarded"
             arg_type = Float64
-            default = 0.60
-        "--disable-strict-align", "-d"
+            default = 0.0
+        "--score-only-overlap", "-s"
             action = :store_true
-            help = "When aligning reads, whether to disable strict scoring of short overlaps (OK if you have high quality but short overlapping sequences"
+            help = "When aligning overhanging reads, whether to score only the overlapping region (OK if you have high quality and short overlapping reads)"
         "--minimum-overlap", "-O"
             help = "The minimum overlap of reads required for further analysis"
             arg_type = Int
@@ -449,7 +461,7 @@ function main()
     leader       = parsed_args["leader"]
     follower_    = reverse_complement(parsed_args["follower"])
     alignment_threshold = parsed_args["align-threshold"]
-    prioritize_within   =!parsed_args["disable-strict-align"]
+    prioritize_within   =!parsed_args["score-only-overlap"]
     minimum_overlap     = parsed_args["minimum-overlap"]
     expected_length     = parsed_args["expected-length"]
     minimum_length      = parsed_args["minimum-length"]
