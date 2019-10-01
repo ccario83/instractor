@@ -64,13 +64,13 @@ The script requires at minimum two read files, specified with `--read1` and `--r
 Screen output:
 ```bash
 🧬  Summary
-Total processed:     	    1001
-# errors:            	     988
-# successful:        	      13
-Successfully parsed: 	    1.30%
+Total processed:     	    1000
+# errors:            	       0
+# successful:        	    1000
+Successfully parsed: 	  100.00%
 
 🧬  Errors
-Read alignment:     	     987
+Read alignment:     	       0
 Insert size:        	       0
 No insert:          	       0
 
@@ -84,16 +84,18 @@ You'll also see the output reads in fastq format (read1's header with the insert
 *examples/example1_output.fastq:*
 
 ```bash
-@NS500221:298:HCFTVBGXB:1:11101:5483:1102 1:N:0:TAGCGCTC+AGGCTTNG  0.810  
-ATGGGCAACTATAATGGGCAGAATACGGCTTCGCTAAGTGTATTCATCCCCCCCTACTTCGCGGAGAAGATCATACTTACAGAGATGCCTTGTTCGACAGATACAAAC  
-+  
-AAAAAEEEEEEEEEE6EEEEEEE6EAEAE/EEEEEEEEAAEEAEE6AEE<AAE<E6E/AEEEEEEE6EAAEEE<E/A#//EE/EE#EE/##EE#EEEEEEE#E////A  
-@NS500221:298:HCFTVBGXB:1:11101:13566:1105 1:N:0:TAGCGCTC+AGGCTTNG  0.814  
-GTGTCACTAGCGCGTCGGAACTCCAGCGAGCGCACACTTTCCCCAGGATTGCCTAGCGGGTCGATGTCACCGCTACATACTCCACTACATTCCTCCCTCGTTTCATTT  
-+  
-AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAEEEEEEEEEEEEEEAEEEEEEEE#EEEEEEE#EEE##EE#EEEEEEE#EAAAAA  
-@NS500221:298:HCFTVBGXB:1:11101:6317:1109 1:N:0:TAGCGCTC+AGGCTTNG  0.798  
-GAGGCGAAAGACGAATGCCGAAGCGCCATGGAAGCTCTCAAACAAAAGAGTCTTTATAACTGTCGATGTAAAAGGGGTATGAAAATGGATTAGTATTGTCTTCGCATA  
+@NS500221:298:HCFTVBGXB:1:11101:5483:1102 1:N:0:TAGCGCTC+AGGCTTNG  0.413
+ATGGGCAACTATAATGGGCAGAATACGGCTTCGCTAAGTGTATTCATCCCCCCCTACTTCGCGGAGAAGATCATACTTACAGAGATGCCTTGTTCGACAGATACAAAC
++
+AAAAAEEEEEEEEEE6EEEEEEE6EAEAE/EEEEEEEEAAEEAEE6AEE<AAE<E6E/AEEEEEEE6EAAEEE<E/A#//EE/EE#EE/##EE#EEEEEEE#E////A
+@NS500221:298:HCFTVBGXB:1:11101:13566:1105 1:N:0:TAGCGCTC+AGGCTTNG  0.395
+GTGTCACTAGCGCGTCGGAACTCCAGCGAGCGCACACTTTCCCCAGGATTGCCTAGCGGGTCGATGTCACCGCTACATACTCCACTACATTCCTCCCTCGTTTCATTT
++
+AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAEEEEEEEEEEEEEEAEEEEEEEE#EEEEEEE#EEE##EE#EEEEEEE#EAAAAA
+@NS500221:298:HCFTVBGXB:1:11101:6317:1109 1:N:0:TAGCGCTC+AGGCTTNG  0.405
+GAGGCGAAAGACGAATGCCGAAGCGCCATGGAAGCTCTCAAACAAAAGAGTCTTTATAACTGTCGATGTAAAAGGGGTATGAAAATGGATTAGTATTGTCTTCGCATA
++
+A/AAAEEEEEEEEEEEEEEAEEEEEEEEEEAEEEEEEEEEEE<EE/EEEEEEEEEEEEEEAAEEEEE/AEEEEEEEE#A/AEEAE#/EE##EA#/EEEEEE#EAAAAA
 ```
 
 <br/>
@@ -101,7 +103,7 @@ GAGGCGAAAGACGAATGCCGAAGCGCCATGGAAGCTCTCAAACAAAAGAGTCTTTATAACTGTCGATGTAAAAGGGGTAT
 
 ### Example 2: Specifying expected insert lengths 
 
-If reads are entirely within the insert sequence (that is, there is no vector sequence to trim) and your reads overlap, you can specify the expected consensus sequence length (typically [2 x read length] - overlap) with `-e`. You can also specify the minimum read overlap with `-O`. In cases where the overlapped region is short relative to the read lengths, poor alignment scores may result. Instead of relaxing the alignment score threshold, you can disable strict alignment with `-d`, which doesn't penalize short alignments as much. This is advisable only if you have high quality overlapping regions that are significantly shorter than the read lengths and you've also specified the expected insert and/or overlap size: 
+If reads are entirely within the insert sequence (that is, there is no vector sequence to trim) and your reads overlap, you can specify the expected consensus sequence length (typically [2 x read length] - overlap) with `-e`. You can also specify the minimum read overlap with `-O`: 
 
 ```
 Total insert size of 108 and overlap of 44 (we'll set the threshold to 40)
@@ -112,7 +114,7 @@ AACACGAGTCAAAGTCAAAAGAAAGGACAGCAATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGT
 ```
 
 ```bash
-./instractor.jl -d -O 40 -e 108 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example2_output.fastq
+./instractor.jl -O 40 -e 108 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example2_output.fastq
 ```
 <br/>
 <br/>
@@ -120,14 +122,14 @@ Screen output:
 
 ```bash
 🧬  Summary
-Total processed:     	    1001
-# errors:            	     493
-# successful:        	     508
-Successfully parsed: 	   50.75%
+Total processed:     	    1000
+# errors:            	     247
+# successful:        	     753
+Successfully parsed: 	   75.30%
 
 🧬  Errors
-Read alignment:     	      52
-Insert size:        	     440
+Read alignment:     	      10
+Insert size:        	     237
 No insert:          	       0
 
 Wrote "examples/example2_output.fastq"
@@ -141,30 +143,32 @@ Wrote "examples/example2_output.fastq"
 In addition to writing an output file, you can visualize how the alignment is actually going by changing the mode to 'show' with `-m`:
 
 ```bash
-./instractor.jl -m show -d -O 40 -e 108 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example3_output.fastq
+./instractor.jl -m show -O 40 -e 108 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example3_output.fastq
 ```
 
-Now you'll see entries like this printed to the screen:
+Now you'll see entries like this printed to the screen (it looks much better in an actual terminal):
 
 ```
 Entry: 1000   
 >>>
+Aligned Reads:
 ▅▅▅▅▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆
 AACACGAGTCAAAGTCAAAAGAAAGGACAGCAATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGT
                                 ATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGTGCGAAGTCATAACCTCTTCGGATCTACATAAG
                                 ▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▅▅▅▅
 
 
+Extracted insert:
 ▅▅▅▅▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▅▅▅▅
 AACACGAGTCAAAGTCAAAAGAAAGGACAGCAATCCCAGTTTTTACAGAGCAGGAACCTGAAATGCATCGCGTTGTGCGAAGTCATAACCTCTTCGGATCTACATAAG
+
 Length:  108
 Offset:    0
-
-Alignment score: 1.00
+Alignment score: 0.58
 <<<
 ```
 
-Here we see quality scores represented as vertical bars (the taller the better!), read 1's sequence, read 2's reverse complemented sequence and quality scores, and their overlap. The final molecule's quality, sequence, and length is also shown. Final base calls and quality scores are simply taken from the original read, on in the case where there is overlap from the read with the better quality.
+Here we see quality scores represented as vertical bars (the taller the better!), read 1's sequence, read 2's reverse complemented sequence and quality scores, and their overlap. The final extracted insert's quality, sequence, and length is also shown. Base calls and quality scores in the extracted sequence are taken from the original reads, on in the case where there is an overlap, from the read with the better quality.
 
 <br/>
 <br/>
@@ -182,6 +186,7 @@ Now you\'ll see two additional sequences that correspond to the input leading an
 ```
 Entry: 5437   
 >>>
+Aligned Reads:
 CGCAATTCCTTTAGTGGTACCTTTCTATTCTCACTCT
 ▅▅▅▅▅▅▄▄▆▆▆▆▄▄▆▅▅▅▆▆▆▄▄▆▆▆▅▄▄▄▆▆▆▄▄▄▄▅▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▄▄▄▅▆▄▆▆▄▄▃▅▅▄
 CGCAATTCCTTTAGTGCTACCTTTCGAGGCTCACTCTGATATGTCTCTTCATATTAGTGGTGGAGGTTCGGAAGAA
@@ -189,12 +194,13 @@ CGCAATTCCTTTAGTGCTACCTTTCGAGGCTCACTCTGATATGTCTCTTCATATTAGTGGTGGAGGTTCGGAAGAA
               ▃▆▃▅▆▄▄▄▃▆▅▆▆▄▃▅▅▆▆▄▆▄▄▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▄▄▄▃▃▅▄▃▃▄▆▅▃▄▄▄▅▆▆▄▄▄▃▄▄▆▃▅▅▅▅▅
                                                           GGTGGAGGTTCGGCCGAAACTGTTGAAAG~~~
 
+Extracted insert:
                                      ▅▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆
-Extracted insert:                    GATATGTCTCTTCATATTAGT
+                                     GATATGTCTCTTCATATTAGT
+
 Length:   21
 Offset:   37
-
-Alignment score: 0.92
+Alignment score: 0.75
 Leader score:    0.95
 Follower score:  0.93
 <<<
@@ -207,7 +213,7 @@ Follower score:  0.93
 If downstream analysis is able to handle compressed fastq files, it may be desirable to save disk space and write them directly. To do so, simply change the `--format` argument to "fastq.gz": 
 
 ```bash
- ./instractor.jl -d -O 40 -e 108 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq --format "fastq.gz" -o examples/example5_output.fastq.gz
+ ./instractor.jl -O 40 -e 108 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq --format "fastq.gz" -o examples/example5_output.fastq.gz
 ```
 
 <br/>
@@ -228,7 +234,7 @@ Instractor also supports fasta/fasta.gz file formats with the `--format` argumen
 
 ### Example 7: Print options in 'show' mode
 
-There are a few different ways to control what sequence information is shown in 'show' mode. By default, the read alignment, leader/follower, and insert sequences are shown. You can also display the consensus sequence using `-C`. If you'd prefer to not show the read alignment, you can specify `-R`. The leader/follower sequences will then be shown on the consensus sequence in this case if `-C` is specified. Finally, to suppress showing the insert, you can use `-I`. In example 7, we choose to suppress the read alignment and show the consensus instead, while also keeping the insert sequence (by adding `-C -R` to the command): 
+There are a few different ways to control what sequence information is shown in 'show' mode. By default, the read alignment, leader/follower, and insert sequences are shown. You can also display the consensus sequence using `-C`. If you'd prefer to not show the read alignment, you can specify `-R`. In this case, the leader/follower sequences will then be shown on the consensus sequence if `-C` is also specified. Finally, to suppress showing the insert, you can use `-I`. In example 7, we will suppress the read alignment and show the consensus and insert sequences (by adding `-C -R` to the command): 
 
 ```bash
 ./instractor.jl -a .5 -e 21 -m show -C -R --read1 examples/R1_trim.fastq.gz --read2 examples/R2_trim.fastq.gz -L CGCAATTCCTTTAGTGGTACCTTTCTATTCTCACTCT -F CTTTCAACAGTTTCGGCCGAACCTCCACC -o examples/example7_output.fastq 
@@ -254,8 +260,136 @@ Offset:   37
 Alignment score: 0.75
 Leader score:    0.95
 Follower score:  0.93
-
 <<<
+```
+
+<br/>
+<br/>
+
+
+### Example 8: Filtering by alignment quality
+
+You may want to remove reads that have poor alignment to each other. This is as easy as adding `-a` to the command line arguments and then specifying a filtering level between 0 - 1.0. This number represents the % agreement between bases. Here's example 1 specifying 80% agreement in overlap:
+
+```bash
+./instractor.jl -a .3 --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example8a_output.fastq
+```
+<br/>
+
+We now notice that 93 reads fail to pass the 'Read alignment' filter:
+
+Screen output:
+```bash
+🧬  Summary
+Total processed:     	    1000
+# errors:            	      93
+# successful:        	     907
+Successfully parsed: 	   90.70%
+
+🧬  Errors
+Read alignment:     	      93
+Insert size:        	       0
+No insert:          	       0
+
+Wrote "examples/example8_output.fastq"
+```
+
+You may notice that 30% is quite a low threshold. This is because the percent agreement is over the _entire_ read length. If you'd prefer to consider just the overlapping region, use the `-s` flag. You can then specify a much higher threshold without loosing reads:
+
+```bash
+./instractor.jl -a .95 -s --read1 examples/R1_notrim.fastq --read2 examples/R2_notrim.fastq -o examples/example8b_output.fastq
+```
+<br/>
+
+Screen output:
+```bash
+🧬  Summary
+Total processed:     	    1000
+# errors:            	      38
+# successful:        	     962
+Successfully parsed: 	   96.20%
+
+🧬  Errors
+Read alignment:     	      38
+Insert size:        	       0
+No insert:          	       0
+
+Wrote "examples/example8b_output.fastq"
+```
+
+__This mode is only recommended if you have very high quality, short overlapping reads.__  
+
+To see how this matters, lets take a look at an extreme example of two read alignments, the first using just default parameters:
+
+```bash
+./instractor.jl -m show --read1 test/strict_test_R1.fastq --read2 test/strict_test_R2.fastq --output /dev/null
+```
+<br/>
+
+Screen output:
+```bash
+Aligned Reads:
+▆▄▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGCGCCGCGCGCGCGGG
+                                                   GGGCCGCGCGCGCGGGCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+                                                   ▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▄▆
+
+
+Extracted insert:
+▆▄▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▄▆
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGGCCGCGCGCGCGGGCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+
+Length:  118
+Offset:    0
+Alignment score: 0.22
+```
+<br/>
+
+Note the "low" alignment score, calculated as the matched overlapped reads divided by the total read length. The alignment is correct, however, so we _could_ score only overlapping regions with the `-s` flag:
+
+```bash
+./instractor.jl -s -m show --read1 test/strict_test_R1.fastq --read2 test/strict_test_R2.fastq --output /dev/null
+```
+<br/>
+
+Screen output:
+```bash
+Aligned Reads:
+▆▄▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGCGCCGCGCGCGCGGG
+                                                                GGGCCGCGCGCGCGGGCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+                                                                ▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▄▆
+
+
+Extracted insert:
+▆▄▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▄▆
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGCGCCGCGCGCGCGGGCCGCGCGCGCGGGCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+
+Length:  131
+Offset:    0
+Alignment score: 1.00
+```
+<br/>
+
+_What happened!?_ If you look closely, there's a mutation on the top strand (first 'C'). This causes the alignment of the ideal overlap region to be 93.75%. The shown alignment is much shorter, but at 100%, so it wins. This demonstrates the danger of using `-s` mode. If the base mutation was not present, we would observe the ideal region and a 100% alignment score:  
+<br/>
+
+Screen output:
+```bash
+Aligned Reads:
+▆▄▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGGCCGCGCGCGCGGG
+                                                   GGGCCGCGCGCGCGGGCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+                                                   ▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▄▆
+
+
+Extracted insert:
+▆▄▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▄▆
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGGCCGCGCGCGCGGGCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+
+Length:  118
+Offset:    0
+Alignment score: 1.00
 ```
 
 <br/>
