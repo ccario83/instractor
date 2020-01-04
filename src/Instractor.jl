@@ -764,4 +764,8 @@ function main()
     (mode in  ["none", "summary", "show"]) ? close(output_ofh) : nothing
 end
 
+include("precompile.jl")
+_precompile_()
+
+
 end #module
