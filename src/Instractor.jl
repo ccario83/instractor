@@ -1,6 +1,6 @@
-#! /usr/bin/env julia
-# import Pkg; Pkg.add("ArgParse"); Pkg.add("GZip")
-import GZip
+module Instractor 
+
+using GZip
 using Printf
 using ArgParse
 
@@ -15,7 +15,7 @@ end
 function read_entry(file_ptr::GZip.GZipStream)
     he = String(chomp(readline(file_ptr)))
     se = String(chomp(readline(file_ptr)))
-    _  = String(chomp(readline(file_ptr))) # Ignore this line
+    _  = readline(file_ptr) # Ignore this line
     sc = String(chomp(readline(file_ptr)))
     return Fastq(he,se,sc)
 end
@@ -42,16 +42,6 @@ function decode_sequence(encoded_sequence::BitArray{1})
         decoded_sequence = string(decoded_sequence, decoder[encoded_sequence[i:i+1]])
     end
     return decoded_sequence::String
-end
-
-
-### Convert a string of ASCII characters representing quality values into a list of integer scores
-function string2int(string::String)
-    result = Int[]
-    for i in eachindex(string)
-        push!(result, Int(string[i]))
-    end
-    return result
 end
 
 
@@ -774,5 +764,4 @@ function main()
     (mode in  ["none", "summary", "show"]) ? close(output_ofh) : nothing
 end
 
-main()
-
+end #module

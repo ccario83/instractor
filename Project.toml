@@ -1,0 +1,13 @@
+name = "Instractor"
+uuid = "cd987326-9f8a-47fe-983d-cec3b57c3072"
+authors = ["Clint Cario <ccario@avail.bio>", "Tamas Nagy <github@tamasnagy.com>"]
+version = "0.1.0"
+
+[deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+GZip = "92fee26a-97fe-5a0c-ad85-20a5f3185b63"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[compat]
+ArgParse = "0.6"
+GZip = "0.5"
